@@ -12,3 +12,6 @@
 
 using namespace sf;
 using namespace std;
+
+const string PATH_TO_TEXTURES = "recources/textures/";
+enum Direction { Up = 0, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft };

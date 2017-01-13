@@ -1,139 +1,156 @@
 #pragma once
+#include "Header.h"
+#include "Entity.h"
+#include "Animation.h"
+#include "Bullet.h"
 
-using namespace sf;
-
-enum Direction {Left = 0, Right, Up, Down};
-
-class Player
+class Player : public Entity
 {
 public:
-	Player(String texFileIdle, String texFileRun)
+	bool isMove = false;
+
+	Player(const String &texFileIdle, int colIdle, int lineIdle,
+		const String &texFileIdleGun, int colIdleGun, int lineIdleGun,
+		const String &texFileRun, int colRun, int lineRun,
+		const String &texFileRunGun, int colRunGun, int lineRunGun)
 	{
-		textureIdle.loadFromFile("recources/textures/" + texFileIdle + ".png");
-		textureRun.loadFromFile("resources/textures/" + texFileRun + ".png");
-
-		tileSizeIdle = GetTileSize(textureIdle, 22, 8);
-		spriteIdle.setTexture(textureIdle);
-		spriteIdle.setTextureRect(IntRect(0, 0, tileSizeIdle.x, tileSizeIdle.y));
-
-		tileSizeRun = GetTileSize(textureRun, 22, 8);
-		spriteRun.setTexture(textureRun);
-		spriteRun.setTextureRect(IntRect(0, 0, tileSizeRun.x, tileSizeRun.y));
-	}
-
-	Vector2i GetTileSize(Texture texture, int numColumns, int numLines)
-	{
-		return Vector2i(texture.getSize().x / numColumns, texture.getSize().y / numLines);
-	}
-
-	void SetPosition(int X, int Y)
-	{
-		x = X;
-		y = Y;
+		playerAnimation.SetDefaultIdleTextureMap(texFileIdle, colIdle, lineIdle);
+		playerAnimation.SetIdleGunTextureMap(texFileIdleGun, colIdleGun, lineIdleGun);
+		playerAnimation.SetDefaultRunTextureMap(texFileRun, colRun, lineRun);
+		playerAnimation.SetRunGunTextureMap(texFileRunGun, colRunGun, lineRunGun);
 	}
 
 	~Player() = default;
 
-	Vector2i GetPosition()
+	Animation playerAnimation;
+
+	void SetObstacle(FloatRect towerObstacle_)
 	{
-		return Vector2i(x, y);
+		towerObstacle = towerObstacle_;
 	}
 
 	Vector2f GetSize()
 	{
-		return Vector2f(w, h);
+		return Vector2f(playerAnimation.currMap.sprite.getGlobalBounds().width, playerAnimation.currMap.sprite.getGlobalBounds().height);
 	}
 
-	void SetMove(bool IsMove)
+	Direction DirectionFromKey()
 	{
-		isMove = IsMove;
-	}
-
-	void SetDirection(Direction dir)
-	{
-		direction = dir;
-	}
-
-	Sprite GetSprite()
-	{
-		return currSprite;
-	}
-
-	void Update(float time)
-	{
-		if (isMove)
+		if (Keyboard::isKeyPressed(Keyboard::W) && Keyboard::isKeyPressed(Keyboard::A))
 		{
-			currSprite = spriteRun;
-			switch (direction)
-			{
-			case Direction::Left:
-				dx = -speed;
-				dy = 0;
-				break;
-			case Direction::Right:
-				dx = speed;
-				dy = 0;
-				break;
-			case Direction::Up:
-				dx = 0;
-				dy = -speed;
-				break;
-			case Direction::Down:
-				dx = 0;
-				dy = speed;
-				break;
-			}
-			x += dx * time;
-			y += dy * time;
-			spriteRun.setPosition(x, y);
+			return Direction::UpLeft;
+		}
+		if (Keyboard::isKeyPressed(Keyboard::W) && Keyboard::isKeyPressed(Keyboard::D))
+		{
+			return Direction::UpRight;
+		}
+		if (Keyboard::isKeyPressed(Keyboard::S) && Keyboard::isKeyPressed(Keyboard::A))
+		{
+			return Direction::DownLeft;
+		}
+		if (Keyboard::isKeyPressed(Keyboard::S) && Keyboard::isKeyPressed(Keyboard::D))
+		{
+			return Direction::DownRight;
+		}
+
+		if (Keyboard::isKeyPressed(Keyboard::W))
+		{
+			return Direction::Up;
+		}
+		if (Keyboard::isKeyPressed(Keyboard::D))
+		{
+			return Direction::Right;
+		}
+		if (Keyboard::isKeyPressed(Keyboard::S))
+		{
+			return Direction::Down;
+		}
+		if (Keyboard::isKeyPressed(Keyboard::A))
+		{
+			return Direction::Left;
+		}
+	}
+
+	Vector2f MoveFromDirection(float const &time)
+	{
+		float dx = 0;
+		float dy = 0;
+
+		if (direction == Direction::Up) { dy = -speed * time; }
+		else if (direction == Direction::Down) { dy = speed * time; }
+		else if (direction == Direction::Left) { dx = -speed * time; }
+		else if (direction == Direction::Right) { dx = speed * time; }
+		else if (direction == Direction::UpLeft) { dx = -speed * 0.7f * time; dy = -speed * 0.7f * time; }
+		else if (direction == Direction::UpRight) { dx = speed * 0.7f * time; dy = -speed * 0.7f * time; }
+		else if (direction == Direction::DownLeft) { dx = -speed * 0.7f * time; dy = speed * 0.7f * time; }
+		else if (direction == Direction::DownRight) { dx = speed * 0.7f * time; dy = speed * 0.7f * time; }
+
+		return Vector2f(dx, dy);
+	}
+
+	void SetBullet(string nameTexture, float damage, float speedBullet)
+	{
+		bullet.SetTexture(nameTexture);
+		bullet.SetDamage(damage);
+		bullet.SetSpeed(speedBullet);
+	}
+
+	Bullet GetBullet()
+	{
+		return bullet;
+	}
+
+	bool canShot = false;
+
+	void Update(float const & time)
+	{
+		Vector2f moveVector = { 0, 0 };
+		isMove = false;
+
+		if (Keyboard::isKeyPressed(Keyboard::W) || Keyboard::isKeyPressed(Keyboard::A) ||
+			Keyboard::isKeyPressed(Keyboard::S) || Keyboard::isKeyPressed(Keyboard::D))
+		{
+			direction = DirectionFromKey();
+			moveVector = MoveFromDirection(time);
+			isMove = true;
+		}
+
+		if (towerObstacle.contains(position.x + moveVector.x, position.y + moveVector.y))
+		{
+			isMove = false;
 		}
 		else
 		{
-			currSprite = spriteIdle;
-			switch (direction)
-			{
-			case Direction::Left:
-				dx = -speed;
-				dy = 0;
-				break;
-			case Direction::Right:
-				dx = speed;
-				dy = 0;
-				break;
-			case Direction::Up:
-				dx = 0;
-				dy = -speed;
-				break;
-			case Direction::Down:
-				dx = 0;
-				dy = speed;
-				break;
-			}
-			spriteIdle.setPosition(x, y);
+			position += moveVector;
 		}
+
+		if (timerBetweenShots > 0 && !canShot)
+		{
+			timerBetweenShots -= time;
+		}
+		else
+		{
+			canShot = true;
+			timerBetweenShots = timeBetweenShots;
+		}
+
+		playerAnimation.Update(time, isMove, direction);
+		playerAnimation.currMap.sprite.setPosition(position);
+		SetHpPosition(position);
 	}
 
+	void Draw(RenderWindow & window)
+	{
+		window.draw(playerAnimation.currMap.sprite);
+		DrawHp(window);
+	}
 private:
-	Texture textureIdle;
-	Texture textureRun;
-	Sprite spriteIdle;
-	Sprite spriteRun;
-	Sprite currSprite;
-
-	int x;
-	int y;
-	float w;
-	float h;
-
-	Vector2i tileSizeRun;
-	Vector2i tileSizeIdle;
-
-	float speed;
-	Direction direction;
-	bool isMove = false;
-
-	float currFrame;
-
-	float dx; float dy;
+	float speed = 0.15f;
+	Direction direction = Direction::Up;
+	FloatRect towerObstacle;
+	Bullet bullet;
+	float reloadTime;
+	float reloadTimer;
+	float timeBetweenShots = 300;
+	float timerBetweenShots = timeBetweenShots;
 };
-
