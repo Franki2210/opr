@@ -1,39 +1,37 @@
 #pragma once
 #include "Header.h"
 #include "Entity.h"
-#include "Animation.h"
 #include "Bullet.h"
 
 class Player : public Entity
 {
 public:
 	bool isMove = false;
+	bool canShot = false;
 
-	Player(const String &texFileIdle, int colIdle, int lineIdle,
-		const String &texFileIdleGun, int colIdleGun, int lineIdleGun,
-		const String &texFileRun, int colRun, int lineRun,
-		const String &texFileRunGun, int colRunGun, int lineRunGun)
+	Player() = default;
+	Player(string texFileIdle, int colIdle, int lineIdle,
+		string texFileRun, int colRun, int lineRun)
 	{
-		playerAnimation.SetDefaultIdleTextureMap(texFileIdle, colIdle, lineIdle);
-		playerAnimation.SetIdleGunTextureMap(texFileIdleGun, colIdleGun, lineIdleGun);
-		playerAnimation.SetDefaultRunTextureMap(texFileRun, colRun, lineRun);
-		playerAnimation.SetRunGunTextureMap(texFileRunGun, colRunGun, lineRunGun);
+		spriteMapIdle.SetSpriteMap(texFileIdle, colIdle, lineIdle);
+		spriteMapRun.SetSpriteMap(texFileRun, colRun, lineRun);
 	}
-
 	~Player() = default;
 
-	Animation playerAnimation;
-
-	void SetObstacle(FloatRect towerObstacle_)
+	void SetSpriteMaps(string texFileIdle, int colIdle, int lineIdle,
+		string texFileRun, int colRun, int lineRun)
 	{
-		towerObstacle = towerObstacle_;
+		spriteMapIdle.SetSpriteMap(texFileIdle, colIdle, lineIdle);
+		spriteMapRun.SetSpriteMap(texFileRun, colRun, lineRun);
 	}
 
-	Vector2f GetSize()
+	//Препятствие для игрока
+	void SetObstacle(FloatRect obstacle_)
 	{
-		return Vector2f(playerAnimation.currMap.sprite.getGlobalBounds().width, playerAnimation.currMap.sprite.getGlobalBounds().height);
+		obstacle = obstacle_;
 	}
 
+	//Направление движения
 	Direction DirectionFromKey()
 	{
 		if (Keyboard::isKeyPressed(Keyboard::W) && Keyboard::isKeyPressed(Keyboard::A))
@@ -70,7 +68,6 @@ public:
 			return Direction::Left;
 		}
 	}
-
 	Vector2f MoveFromDirection(float const &time)
 	{
 		float dx = 0;
@@ -88,19 +85,36 @@ public:
 		return Vector2f(dx, dy);
 	}
 
+	//Пули
 	void SetBullet(string nameTexture, float damage, float speedBullet)
 	{
 		bullet.SetTexture(nameTexture);
 		bullet.SetDamage(damage);
 		bullet.SetSpeed(speedBullet);
 	}
-
 	Bullet GetBullet()
 	{
 		return bullet;
 	}
 
-	bool canShot = false;
+	void SetTimeBetweenShots(float timeBetween)
+	{
+		timeBetweenShots = timeBetween;
+	}
+
+	//Денюжка
+	void AddCoins(int coin)
+	{
+		coins += coin;
+	}
+	void SubCoins(int coin)
+	{
+		coins -= coin;
+	}
+	int GetMoney()
+	{
+		return coins;
+	}
 
 	void Update(float const & time)
 	{
@@ -115,7 +129,7 @@ public:
 			isMove = true;
 		}
 
-		if (towerObstacle.contains(position.x + moveVector.x, position.y + moveVector.y))
+		if (obstacle.contains(position.x + moveVector.x, position.y + moveVector.y))
 		{
 			isMove = false;
 		}
@@ -134,23 +148,44 @@ public:
 			timerBetweenShots = timeBetweenShots;
 		}
 
-		playerAnimation.Update(time, isMove, direction);
-		playerAnimation.currMap.sprite.setPosition(position);
+		if (isMove) speedAnimation = 0.04f;
+		else speedAnimation = 0.01f;
+
+		currFrame += speedAnimation * time;
+		if (isMove)
+		{
+			if (currFrame > spriteMapRun.GetColumns()) currFrame = 0;
+			spriteMapRun.SetFrame(direction, currFrame);
+			spriteMapRun.SetPosition(position);
+		}
+		else
+		{
+			if (currFrame > spriteMapIdle.GetColumns()) currFrame = 0;
+			spriteMapIdle.SetFrame(direction, currFrame);
+			spriteMapIdle.SetPosition(position);
+		}
 		SetHpPosition(position);
 	}
 
 	void Draw(RenderWindow & window)
 	{
-		window.draw(playerAnimation.currMap.sprite);
+		if (isMove) window.draw(spriteMapRun.sprite);
+		else window.draw(spriteMapIdle.sprite);
 		DrawHp(window);
 	}
 private:
 	float speed = 0.15f;
 	Direction direction = Direction::Up;
-	FloatRect towerObstacle;
+	FloatRect obstacle;
 	Bullet bullet;
 	float reloadTime;
 	float reloadTimer;
-	float timeBetweenShots = 300;
+	float timeBetweenShots = 150;
 	float timerBetweenShots = timeBetweenShots;
+	SpriteMap spriteMapIdle;
+	SpriteMap spriteMapRun;
+	float currFrame = 0;
+	float speedAnimation;
+	int score;
+	int coins = 0;
 };

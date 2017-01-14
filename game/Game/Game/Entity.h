@@ -22,12 +22,12 @@ public:
 		hpSprite.setColor(hpSpriteColor);
 		hpSpriteBG.setOrigin(25.f, 50.f);
 		hpSprite.setOrigin(25.f, 50.f);		
-		cout << "Создан Entity" << endl;
 	}
 	Entity(Vector2f pos, float HP, float damage_)
 		: 
 		position(pos),
 		maxHp(HP),
+		currHp(HP),
 		damage(damage_) 
 	{
 		hpSpriteBG.setTexture(hpTex);
@@ -46,6 +46,7 @@ public:
 	void SetMaxHp(float maxHp_)
 	{
 		maxHp = maxHp_;
+		currHp = maxHp;
 	}
 	float GetMaxHp()
 	{
@@ -81,7 +82,7 @@ public:
 		}
 		else
 		{
-			hpSprite.setTextureRect(IntRect(0, 0, (int)(currHp * 50 / 100), 10));
+			hpSprite.setTextureRect(IntRect(0, 0, (int)(currHp / maxHp * 50), 10));
 		}
 	}
 

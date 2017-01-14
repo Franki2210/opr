@@ -9,7 +9,7 @@ public:
 	{
 		timer += time;
 		fps++;
-		if (timer >= 1000)
+		if (timer >= 1000) //Каждую секунду
 		{
 			cout << fps << endl;
 			fps = 0;
@@ -20,4 +20,3 @@ private:
 	float timer = 0;
 	int fps = 0;
 };
-

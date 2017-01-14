@@ -8,6 +8,7 @@ class Tower : public Entity
 {
 public:
 	SpriteMap spriteMap;
+	bool isCanBuy = false;
 	bool isActive = false;
 	bool canShot = false;
 	Bullet bullet;
@@ -18,14 +19,24 @@ public:
 	CircleShape actionArea;
 	CircleShape boundsArea;
 
-	Texture maxHpTex;
-	Texture currHpTex;
-	Sprite maxHpSprite;
-	Sprite currHpSprite;
+	Tower()
+	{
+		actionArea.setRadius(400);
+		Color actionAreaColor(100, 200, 100, 20);
+		Color actionAreaBorderColor(100, 200, 100, 100);
+		actionArea.setFillColor(actionAreaColor);
+		actionArea.setOutlineColor(actionAreaBorderColor);
+		actionArea.setOutlineThickness(5);
+		actionArea.setOrigin(actionArea.getRadius(), actionArea.getRadius());
+		actionArea.setPointCount(60);
 
-	Tower() = default;
+		boundsArea.setOrigin(boundsArea.getRadius(), boundsArea.getRadius());
+		boundsArea.setRadius(50);
+		Color boundsAreaColor(200, 50, 50, 100);
+		boundsArea.setFillColor(boundsAreaColor);
+	}
 	~Tower() = default;
-	Tower(String nameTowerTexture, int column, int line)
+	Tower(string nameTowerTexture, int column, int line)
 	{
 		spriteMap.SetSpriteMap(nameTowerTexture, column, line);
 		actionArea.setRadius(400);
@@ -41,7 +52,11 @@ public:
 		boundsArea.setRadius(50);
 		Color boundsAreaColor(200, 50, 50, 100);
 		boundsArea.setFillColor(boundsAreaColor);
-		cout << "Создан Tower" << endl;
+	}
+
+	void SetSpriteMap(string nameTowerTexture, int column, int line)
+	{
+		spriteMap.SetSpriteMap(nameTowerTexture, column, line);
 	}
 
 	void SetActionRadius(float radius)
@@ -66,20 +81,23 @@ public:
 		bullet.SetDamage(damage);
 		bullet.SetSpeed(speedBullet);
 	}
-
 	Bullet GetBullet()
 	{
 		return bullet;
 	}
 
-	Vector2f GetSize()
-	{
-		return Vector2f(spriteMap.sprite.getGlobalBounds().width, spriteMap.sprite.getGlobalBounds().height);
-	}
-
 	void SetReloadTime(float reloadTime_)
 	{
 		reloadTime = reloadTime_;
+	}
+
+	void SetPrice(int price_)
+	{
+		price = price_;
+	}
+	int GetPrice()
+	{
+		return price;
 	}
 
 	Vector2f GetEnemyPos()
@@ -107,15 +125,13 @@ public:
 		}
 		spriteMap.SetFrame((int)currFrame);
 	}
-
 	void Update(float const &time)
 	{
 		spriteMap.sprite.setPosition(position);
 		actionArea.setPosition(position);
 		boundsArea.setPosition(position.x - boundsArea.getRadius(), position.y - boundsArea.getRadius());
-		bullet.SetPosition(position);
+		bullet.SetStartPosition(position);
 	}
-
 	void Draw(RenderWindow & window)
 	{
 		window.draw(spriteMap.sprite);
@@ -123,7 +139,7 @@ public:
 	}
 
 private:
-	float currFrame = 1;
+	float currFrame = 0;
 	Vector2f enemyPos;
+	int price;
 };
-

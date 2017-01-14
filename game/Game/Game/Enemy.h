@@ -11,8 +11,10 @@ class Enemy : public Entity
 public:
 	SpriteMap spriteMapRun;
 	SpriteMap spriteMapAttack;
-
 	CircleShape damageArea;
+
+	Tower *tower;
+	Player *player;
 
 	bool attackingPlayer = false;
 	bool isActive = true;
@@ -26,9 +28,9 @@ public:
 		damageArea.setOrigin(damageArea.getRadius(), damageArea.getRadius());
 		spriteMapRun.sprite.setScale(Vector2f(0.6f, 0.6f));
 	}
-
 	~Enemy() = default;
 
+	//Текстурки движения и атаки
 	void SetTextureRun(string nameTexture, int columnInMap, int lineInMap)
 	{
 		spriteMapRun.SetSpriteMap(nameTexture, columnInMap, lineInMap);
@@ -37,14 +39,56 @@ public:
 		damageArea.setOrigin(damageArea.getRadius(), damageArea.getRadius());
 		spriteMapRun.sprite.setScale(Vector2f(0.6f, 0.6f));
 	}
-
 	void SetTextureAttack(string nameTexture, int columnInMap, int lineInMap)
 	{
 		spriteMapAttack.SetSpriteMap(nameTexture, columnInMap, lineInMap);
 		spriteMapAttack.sprite.setScale(Vector2f(0.6f, 0.6f));
 		spriteMapAttack.sprite.setOrigin(spriteMapAttack.sprite.getLocalBounds().width / 3, spriteMapAttack.sprite.getLocalBounds().height / 2);
 	}
+	void SetTextureRun(Texture & texture, int columnInMap, int lineInMap)
+	{
+		spriteMapRun.SetSpriteMap(texture, columnInMap, lineInMap);
+		damageArea.setRadius(25);
+		damageArea.setFillColor(Color::Red);
+		damageArea.setOrigin(damageArea.getRadius(), damageArea.getRadius());
+		spriteMapRun.sprite.setScale(Vector2f(0.6f, 0.6f));
+	}
+	void SetTextureAttack(Texture & texture, int columnInMap, int lineInMap)
+	{
+		spriteMapAttack.SetSpriteMap(texture, columnInMap, lineInMap);
+		spriteMapAttack.sprite.setScale(Vector2f(0.6f, 0.6f));
+		spriteMapAttack.sprite.setOrigin(spriteMapAttack.sprite.getLocalBounds().width / 3, spriteMapAttack.sprite.getLocalBounds().height / 2);
+	}
 
+	void SetSpeedRunAnimation(float speed)
+	{
+		runAnimSpeed = speed;
+	}
+	void SetSpeedAttackAnimation(float speed)
+	{
+		attackAnimSpeed = speed;
+	}
+
+	void SetScale(float scaleFactorX, float scaleFactorY)
+	{
+		spriteMapRun.sprite.setScale(scaleFactorX, scaleFactorY);
+		spriteMapAttack.sprite.setScale(scaleFactorX, scaleFactorY);
+	}
+
+	void SetBossAnim(bool bossAnim)
+	{
+		isBossAnim = bossAnim;
+	}
+	bool GetBossAnim()
+	{
+		return isBossAnim;
+	}
+
+	//Цели для нападения
+	void SetTarget(Player *player_)
+	{
+		player = player_;
+	}
 	void SetTarget(Tower *tower_)
 	{
 		tower = tower_;
@@ -54,18 +98,21 @@ public:
 		return tower;
 	}
 
-	void SetTarget(Player *player_)
+	//Сколько монеток выпадет
+	void SetCoins(int coins_)
 	{
-		player = player_;
+		coins = coins_;
 	}
-
+	int GetCoins()
+	{
+		return coins;
+	}
+	
+	//Скорость
 	void SetSpeed(float speed_)
 	{
 		speed = speed_;
 	}
-
-	Tower *tower = nullptr;
-	Player *player;
 
 	void Update(float const &time)
 	{
@@ -94,15 +141,12 @@ public:
 			double angle = (atan2(dY, dX)) * 180 / 3.14159265 + 90;
 			if (angle < 0) angle += 360;
 			moveVector = dirVector / distance;
-			if (true)
-			{
 
-			}
 			if (distance > 60)
 			{
 				attack = false;
 				position += moveVector * speed * time;
-				frameSpeed = 0.04f;
+				frameSpeed = runAnimSpeed;
 			}
 			else
 			{
@@ -113,11 +157,31 @@ public:
 					else player->TakeDamage(damage);
 					attackTimer = attackDelay;
 				}
-				frameSpeed = 0.01f;
+				frameSpeed = attackAnimSpeed;
 			}
 
 			//В зависимости от угла выбираем линию в карте спрайта (направление)
-			lineInSpriteMap = angle / 22.5;
+			lineInSpriteMap = angle / 22.5f;
+			if (isBossAnim)
+			{
+				if (lineInSpriteMap > spriteMapRun.GetLines() - 2)
+				{
+					lineInSpriteMap = 16 - lineInSpriteMap;
+					if (!spriteMapAttack.GetFlipX() || !spriteMapRun.GetFlipX())
+					{
+						spriteMapAttack.SetFlipX(true);
+						spriteMapRun.SetFlipX(true);
+					}
+				}
+				else
+				{
+					if (spriteMapAttack.GetFlipX() || spriteMapRun.GetFlipX())
+					{
+						spriteMapAttack.SetFlipX(false);
+						spriteMapRun.SetFlipX(false);
+					}
+				}
+			}			
 			currFrame += frameSpeed * time;
 			if (attack)
 			{
@@ -142,7 +206,6 @@ public:
 			SetHpPosition(position);
 		}
 	}
-
 	void Draw(RenderWindow & window)
 	{
 		if (attack)
@@ -153,20 +216,21 @@ public:
 		{
 			window.draw(spriteMapRun.sprite);
 		}
-		//window.draw(currSpriteMap.sprite);
 		DrawHp(window);
 	}
-
 
 private:
 	Vector2f moveVector;
 	float speed = 0.2f;
-	float attackDelay = 1000; // = /1000 секунд
+	float attackDelay = 1000.0f; // = /1000 секунд
 	float attackTimer = 0;
 	Vector2f posAttackTarget;
 	bool attack = false;
 	float currFrame = 1;
 	int lineInSpriteMap = 0;
 	float frameSpeed = 0.04f;
+	float runAnimSpeed = 0.04f;
+	float attackAnimSpeed = 0.01f;
+	int coins = 0;
+	bool isBossAnim = false;
 };
-

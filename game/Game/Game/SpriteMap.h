@@ -8,7 +8,7 @@ public:
 	~SpriteMap() = default;
 
 	Sprite sprite;
-	SpriteMap(string &nameTexture, int &column, int &line)
+	SpriteMap(string nameTexture, int column, int line)
 		: columns(column),
 		lines(line)
 	{
@@ -35,6 +35,15 @@ public:
 		sprite.setTextureRect(IntRect(0, 0, (int)tileSize.x, (int)tileSize.y));
 		sprite.setOrigin(sprite.getLocalBounds().width / 2, sprite.getLocalBounds().height / 2);
 	}
+	void SetSpriteMap(Texture & texture_, int columnsInMap, int linesInMap)
+	{
+		sprite.setTexture(texture_);
+		columns = columnsInMap;
+		lines = linesInMap;
+		GetTileSize();
+		sprite.setTextureRect(IntRect(0, 0, (int)tileSize.x, (int)tileSize.y));
+		sprite.setOrigin(sprite.getLocalBounds().width / 2, sprite.getLocalBounds().height / 2);
+	}
 
 	void SetFrame(int frame)
 	{
@@ -48,7 +57,23 @@ public:
 	}
 	void SetFrame(int column, int line)
 	{
-		sprite.setTextureRect(IntRect(tileSize.x * (int)column, tileSize.y * (int)line, tileSize.x, tileSize.y));
+		if (flipX)
+		{
+			sprite.setTextureRect(IntRect(tileSize.x * (int)column + tileSize.x, tileSize.y * (int)line, -tileSize.x, tileSize.y));
+		}
+		else
+		{
+			sprite.setTextureRect(IntRect(tileSize.x * (int)column, tileSize.y * (int)line, tileSize.x, tileSize.y));
+		}
+	}
+
+	void SetFlipX(bool flip)
+	{
+		flipX = flip;
+	}
+	bool GetFlipX()
+	{
+		return flipX;
 	}
 
 	int GetColumns()
@@ -84,5 +109,6 @@ private:
 
 	int columns;
 	int lines;
+	bool flipX = false;
 };
 

@@ -43,13 +43,12 @@ public:
 	{
 		damage = damage_;
 	}
-
 	float GetDamage()
 	{
 		return damage;
 	}
 
-	void SetPosition(Vector2f pos_)
+	void SetStartPosition(Vector2f pos_)
 	{
 		pos = pos_;
 	}
@@ -98,4 +97,3 @@ private:
 
 	Texture bulletTexture;
 };
-

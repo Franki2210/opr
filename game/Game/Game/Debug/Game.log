@@ -1,0 +1,15 @@
+﻿  Main.cpp
+c:\users\димон\documents\visual studio 2015\projects\game\game\enemy.h(164): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+c:\users\димон\documents\visual studio 2015\projects\game\game\coin.h(45): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+c:\users\димон\documents\visual studio 2015\projects\game\game\coin.h(47): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+c:\users\димон\documents\visual studio 2015\projects\game\game\coin.h(48): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\димон\documents\visual studio 2015\projects\game\game\coin.h(49): warning C4244: '-=': conversion from 'double' to 'byte', possible loss of data
+c:\users\димон\documents\visual studio 2015\projects\game\game\portal.h(28): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+c:\users\димон\documents\visual studio 2015\projects\game\game\portal.h(30): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+c:\users\димон\documents\visual studio 2015\projects\game\game\main.cpp(358): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
+c:\users\димон\documents\visual studio 2015\projects\game\game\main.cpp(359): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\димон\documents\visual studio 2015\projects\game\game\main.cpp(366): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
+c:\users\димон\documents\visual studio 2015\projects\game\game\main.cpp(451): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\димон\documents\visual studio 2015\projects\game\game\player.h(70): warning C4715: 'Player::DirectionFromKey': not all control paths return a value
+  Game.vcxproj -> C:\Users\Димон\Documents\Visual Studio 2015\Projects\Game\Debug\Game.exe
+  Game.vcxproj -> C:\Users\Димон\Documents\Visual Studio 2015\Projects\Game\Debug\Game.pdb (Full PDB)

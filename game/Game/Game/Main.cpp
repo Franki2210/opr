@@ -7,6 +7,8 @@
 #include "Enemy.h"
 #include "Entity.h"
 #include "Player.h"
+#include "Coin.h"
+#include "Portal.h"
 
 class Icon
 {
@@ -26,6 +28,18 @@ public:
 	}
 	~Icon() = default;
 
+	void SetSprite(string nameTexture)
+	{
+		if (!texture.loadFromFile(PATH_TO_TEXTURES + nameTexture + ".png"))
+		{
+			cout << "Сорян, не загрузилась: " << nameTexture << endl;
+		}
+		sprite.setTexture(texture);
+		sprite.setOrigin(sprite.getLocalBounds().width / 2, sprite.getLocalBounds().height / 2);
+		sprite.setScale(Vector2f(0.2f, 0.2f));
+		sprite.setColor(Color(100, 100, 100));
+	}
+
 	void SetPosition(Vector2f pos)
 	{
 		sprite.setPosition(pos);
@@ -34,6 +48,24 @@ public:
 	{
 		sprite.setPosition(Vector2f(x, y));
 	}
+
+	void SetActive(bool isActive_)
+	{
+		isActive = isActive_;
+		if (!isActive)
+		{
+			sprite.setColor(Color(100, 100, 100));
+		}
+		else
+		{
+			sprite.setColor(Color::White);
+		}
+	}
+	bool GetActive()
+	{
+		return isActive;
+	}
+
 	void Draw(RenderWindow & window)
 	{
 		window.draw(sprite);
@@ -41,22 +73,81 @@ public:
 
 private:
 	Texture texture;
+	bool isActive = false;
 };
 
-void SpawnEnemy(list<Enemy*> & enemies, Enemy & enemy, Player & player)
+struct AreasPlacingTower
 {
-	Enemy *spawnEnemy = new Enemy;
-	*spawnEnemy = enemy;
-	if (rand()%2 == 0)
+	CircleShape placingArea;
+	CircleShape notPlacingArea;
+};
+struct UsedIcons
+{
+	Icon icon1;
+	Icon icon2;
+	Icon icon3;
+};
+struct UsedTowers
+{
+	Tower tower1;
+	Tower tower2;
+	Tower tower3;
+};
+struct UsedEnemies
+{
+	Enemy enemy1;
+	Enemy enemy2;
+	Enemy enemy3;
+};
+struct UsedCursors
+{
+	Sprite aimCursor;
+	Sprite handCursor;
+	Texture aimTex;
+	Texture handTex;
+};
+struct UsedPortal
+{
+	SpriteMap spriteMap;
+};
+
+void SpawnCoin(list<Coin*> & coins, Coin & coin, int value, Vector2f position)
+{
+	Coin *newCoin = new Coin;
+	*newCoin = coin;
+	newCoin->SetPosition(position);
+	newCoin->SetValue(value);
+	coins.push_back(newCoin);
+}
+
+void ActiveDisactiveIconsTower(UsedIcons & usedIcons, UsedTowers & usedTowers, Player & player)
+{
+	if (usedIcons.icon1.GetActive() && player.GetMoney() < usedTowers.tower1.GetPrice())
 	{
-		spawnEnemy->SetPosition(player.GetPosition().x + rand() % 640, player.GetPosition().y + rand() % 360);
+		usedIcons.icon1.SetActive(false);
 	}
-	else
+	else if (!usedIcons.icon1.GetActive() && player.GetMoney() >= usedTowers.tower1.GetPrice())
 	{
-		spawnEnemy->SetPosition(player.GetPosition().x - rand() % 640, player.GetPosition().y - rand() % 360);
+		usedIcons.icon1.SetActive(true);
 	}
-	
-	enemies.push_back(spawnEnemy);
+
+	if (usedIcons.icon2.GetActive() && player.GetMoney() < usedTowers.tower2.GetPrice())
+	{
+		usedIcons.icon2.SetActive(false);
+	}
+	else if (!usedIcons.icon2.GetActive() && player.GetMoney() >= usedTowers.tower2.GetPrice())
+	{
+		usedIcons.icon2.SetActive(true);
+	}
+
+	if (usedIcons.icon3.GetActive() && player.GetMoney() < usedTowers.tower3.GetPrice())
+	{
+		usedIcons.icon3.SetActive(false);
+	}
+	else if (!usedIcons.icon3.GetActive() && player.GetMoney() >= usedTowers.tower3.GetPrice())
+	{
+		usedIcons.icon3.SetActive(true);
+	}
 }
 
 void TowerUpdateAndDraw(list<Tower*> & towersInGame, list<Enemy*> & enemies, list<Bullet*> & bullets, Player & player, Tower *placingTower, bool &establishedTower,
@@ -136,8 +227,7 @@ void TowerUpdateAndDraw(list<Tower*> & towersInGame, list<Enemy*> & enemies, lis
 		}
 	}
 }
-
-void EnemiesUpdateAndDraw(list<Enemy*> & enemies, list<Tower*> & towersInGame, Player & player, RenderWindow & window, float & time)
+void EnemiesUpdateAndDraw(list<Enemy*> & enemies, list<Tower*> & towersInGame, Player & player, list<Coin*> & coins, Coin & coin, RenderWindow & window, float & time)
 {
 	for (auto itEnemy = enemies.begin(); itEnemy != enemies.end();)
 	{
@@ -145,6 +235,9 @@ void EnemiesUpdateAndDraw(list<Enemy*> & enemies, list<Tower*> & towersInGame, P
 		Vector2f itPosition = enemy->GetPosition();
 		if (enemy->isDestroy)
 		{
+			//TODO: Звук смерти врага
+			SpawnCoin(coins, coin, enemy->GetCoins(), enemy->GetPosition());
+			player.AddCoins(enemy->GetCoins());
 			itEnemy = enemies.erase(itEnemy);
 			delete(enemy);
 		}
@@ -176,13 +269,22 @@ void EnemiesUpdateAndDraw(list<Enemy*> & enemies, list<Tower*> & towersInGame, P
 				if (!enemy->attackingPlayer) enemy->attackingPlayer = true;
 			}
 
+			FloatRect enemyBounds = enemy->damageArea.getGlobalBounds();
+			for (auto it = enemies.begin(); it != enemies.end(); ++it)
+			{
+				if ((*it)->damageArea.getGlobalBounds().intersects(enemyBounds))
+				{
+					Vector2f VectorBetweenEnemies = (*it)->GetPosition() - enemy->GetPosition();
+					Vector2f VectorThrowing = VectorBetweenEnemies / 100.0f;
+					enemy->SetPosition(enemy->GetPosition() - VectorThrowing);
+				}
+			}
 			enemy->Update(time);
 			(*itEnemy)->Draw(window);
 			itEnemy++;
 		}
 	}
 }
-
 void BulletUpdateAndDraw(list<Bullet*> & bullets, list<Enemy*> & enemies, RenderWindow & window, float & time)
 {
 	for (auto it = bullets.begin(); it != bullets.end();)
@@ -212,114 +314,254 @@ void BulletUpdateAndDraw(list<Bullet*> & bullets, list<Enemy*> & enemies, Render
 		}
 	}
 }
+void CoinsUpdateAndDraw(list<Coin*> & coins, RenderWindow & window, float time)
+{
+	for (auto it = coins.begin(); it != coins.end();)
+	{
+		Coin *coin = *it;
+		if (coin->destroy)
+		{
+			it = coins.erase(it);
+			delete(coin);
+		}
+		else
+		{
+			coin->Update(time);
+			coin->Draw(window);
+			it++;
+		}
+	}
+}
+void IconsUpdateAndDraw(UsedIcons & usedIcons, UsedTowers & usedTowers, Player & player, View & view, RenderWindow & window)
+{
+	ActiveDisactiveIconsTower(usedIcons, usedTowers, player);
+	usedIcons.icon1.SetPosition(view.getCenter() + Vector2f(-100, 300));
+	usedIcons.icon1.Draw(window);
+	usedIcons.icon2.SetPosition(view.getCenter() + Vector2f(0, 300));
+	usedIcons.icon2.Draw(window);
+	usedIcons.icon3.SetPosition(view.getCenter() + Vector2f(100, 300));
+	usedIcons.icon3.Draw(window);
+}
+void PortalUpdateAndDraw(Portal & portal, RenderWindow & window, float time)
+{
+	portal.Update(time);
+	portal.Draw(window);
+}
+
+void InitCursors(UsedCursors & usedCursors)
+{
+	if (!usedCursors.aimTex.loadFromFile(PATH_TO_TEXTURES + "aim_cursor.png"))
+	{
+		cout << "Сорян, не загрузилась: " << "aim_cursor.png" << endl;
+	}
+	usedCursors.aimCursor.setTexture(usedCursors.aimTex);
+	usedCursors.aimCursor.setOrigin(usedCursors.aimTex.getSize().x / 2, usedCursors.aimTex.getSize().y / 2);
+	usedCursors.aimCursor.setScale(0.15, 0.24);
+
+	if (!usedCursors.handTex.loadFromFile(PATH_TO_TEXTURES + "hand_cursor.png"))
+	{
+		cout << "Сорян, не загрузилась: " << "hand_cursor.png" << endl;
+	}
+	usedCursors.handCursor.setTexture(usedCursors.handTex);
+	usedCursors.handCursor.setOrigin(usedCursors.handTex.getSize().x / 2, usedCursors.handTex.getSize().y / 2);
+	usedCursors.handCursor.setScale(0.5, 0.5);
+}
+void InitTowers(UsedTowers & usedTowers)
+{
+	usedTowers.tower1.SetSpriteMap("towers/gun_turret", 2, 64);
+	usedTowers.tower2.SetSpriteMap("towers/twin_gun_turret", 8, 8);
+	usedTowers.tower3.SetSpriteMap("towers/laser_turret", 8, 8);
+
+	usedTowers.tower1.SetMaxHp(300);
+	usedTowers.tower2.SetMaxHp(200);
+	usedTowers.tower3.SetMaxHp(100);
+
+	usedTowers.tower1.SetBullet("bullet", 0.5f, 0.5f);
+	usedTowers.tower2.SetBullet("twin_bullet", 1, 0.5f);
+	usedTowers.tower3.SetBullet("laser_bullet", 5, 2.f);
+
+	usedTowers.tower2.bullet.bulletSprite.setScale(Vector2f(1.1f, 1.1f));
+	usedTowers.tower3.bullet.bulletSprite.setScale(Vector2f(1.1f, 1.1f));
+
+	usedTowers.tower1.SetReloadTime(200);
+	usedTowers.tower2.SetReloadTime(200);
+	usedTowers.tower3.SetReloadTime(1000);
+
+	usedTowers.tower1.SetActionRadius(150);
+	usedTowers.tower2.SetActionRadius(200);
+	usedTowers.tower3.SetActionRadius(300);
+
+	usedTowers.tower1.SetPrice(50);
+	usedTowers.tower2.SetPrice(100);
+	usedTowers.tower3.SetPrice(300);
+}
+void InitIcons(UsedIcons & usedIcons)
+{
+	usedIcons.icon1.SetSprite("gun_turret_icon");
+	usedIcons.icon2.SetSprite("twin_gun_turret_icon");
+	usedIcons.icon3.SetSprite("laser_turret_icon");
+
+	usedIcons.icon1.SetPosition(540, 650);
+	usedIcons.icon2.SetPosition(640, 650);
+	usedIcons.icon3.SetPosition(740, 650);
+}
+void InitEnemies(UsedEnemies & usedEnemies)
+{
+	/*Texture texRun;
+	texRun.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy1_run.png");
+	Texture texAttack;
+	texAttack.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy1_attack.png");
+
+	usedEnemies.enemy1.SetTextureRun(texRun, 16, 16);
+	usedEnemies.enemy1.SetTextureAttack(texAttack, 11, 16);*/
+	usedEnemies.enemy1.SetTextureRun("enemies/enemy1_run", 16, 16);
+	usedEnemies.enemy1.SetTextureAttack("enemies/enemy1_attack", 11, 16);
+	usedEnemies.enemy1.SetMaxHp(50);
+	usedEnemies.enemy1.SetSpeed(0.2f);
+	usedEnemies.enemy1.SetDamage(3);
+	usedEnemies.enemy1.SetCoins(10);
+	usedEnemies.enemy1.SetSpeedAttackAnimation(0.01f);
+	usedEnemies.enemy1.SetSpeedRunAnimation(0.04f);
+
+	/*Texture texRun2;
+	texRun2.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy2_run.png");
+	Texture texAttack2;
+	texAttack2.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy2_attack.png");
+
+	usedEnemies.enemy2.SetTextureRun(texRun2, 16, 16);
+	usedEnemies.enemy2.SetTextureAttack(texAttack2, 11, 16);*/
+	usedEnemies.enemy2.SetTextureRun("enemies/enemy2_run", 24, 16);
+	usedEnemies.enemy2.SetTextureAttack("enemies/enemy2_attack", 22, 16);
+	usedEnemies.enemy2.SetMaxHp(100);
+	usedEnemies.enemy2.SetSpeed(0.12f);
+	usedEnemies.enemy2.SetDamage(5);
+	usedEnemies.enemy2.SetCoins(25);
+	usedEnemies.enemy2.SetSpeedAttackAnimation(0.01f);
+	usedEnemies.enemy2.SetSpeedRunAnimation(0.04f);
+
+	usedEnemies.enemy3.SetTextureRun("enemies/enemy3_run", 30, 9);
+	usedEnemies.enemy3.SetTextureAttack("enemies/enemy3_attack", 15, 9);
+	usedEnemies.enemy3.SetMaxHp(300);
+	usedEnemies.enemy3.SetBossAnim(true);
+	usedEnemies.enemy3.SetSpeed(0.1f);
+	usedEnemies.enemy3.SetDamage(10);
+	usedEnemies.enemy3.SetCoins(100);
+	usedEnemies.enemy3.SetSpeedAttackAnimation(0.01f);
+	usedEnemies.enemy3.SetSpeedRunAnimation(0.03f);
+	usedEnemies.enemy3.SetScale(1.2, 1.2);
+}
+void InitPlayer(Player & player)
+{
+	player.SetSpriteMaps("player_idle", 22, 8, "player_run", 22, 8);
+	player.SetPosition(800, 600);
+	player.SetBullet("bullet", 5, 1.f);
+	player.SetMaxHp(50);
+}
+void InitAreasPlacingTower(AreasPlacingTower & areasPlacing)
+{
+	areasPlacing.placingArea.setRadius(150);
+	Color placeAreaColor(0, 200, 0, 30);
+	areasPlacing.placingArea.setFillColor(placeAreaColor);
+	areasPlacing.placingArea.setOrigin(areasPlacing.placingArea.getRadius(), areasPlacing.placingArea.getRadius());
+
+	areasPlacing.notPlacingArea.setRadius(50);
+	Color nonPlaceAreaColor(200, 0, 0, 30);
+	areasPlacing.notPlacingArea.setFillColor(nonPlaceAreaColor);
+	areasPlacing.notPlacingArea.setOrigin(areasPlacing.notPlacingArea.getRadius(), areasPlacing.notPlacingArea.getRadius());
+}
+void InitPortal(Portal & portal)
+{
+	portal.SetSpriteMap("portal", 7, 1);
+	portal.SetPosition(800, 800);
+}
 
 int main()
 {
-	ContextSettings settings;
-	settings.antialiasingLevel = 4;
-
-	RenderWindow window(VideoMode(1920, 1080), "Gama", Style::Fullscreen, settings);
+	RenderWindow window(VideoMode(1280, 720), "Gama", Style::Default);
+	window.setFramerateLimit(150);
 	View view;
 	view.reset(FloatRect(0, 0, 1280, 720));
 
-	setlocale(LC_ALL, "rus");
+	Font fontForMoney;
+	fontForMoney.loadFromFile(PATH_TO_FONTS + "for_money.ttf");
+	Text playerMoneyText("", fontForMoney, 20);
+	playerMoneyText.setStyle(Text::Bold);
 
-	Player player("player_idle", 22, 8,
-				  "player_idle_gun", 22, 8, 
-				  "player_run", 22, 8, 
-				  "player_run_gun", 22, 18);
-	player.SetPosition(100, 100);
-	player.SetBullet("bullet", 5, 1.f);
-
-	Tower tower1("gun_turret", 2, 64);
-	Tower tower2("twin_gun_turret", 8, 8);
-	Tower tower3("laser_turret", 8, 8);
-
-	tower1.SetBullet("bullet", 0.5f, 0.5f);
-	tower2.SetBullet("twin_bullet", 1, 0.5f);
-	tower3.SetBullet("laser_bullet", 5, 2.f);
-
-	tower1.SetReloadTime(200);
-	tower2.SetReloadTime(200);
-	tower3.SetReloadTime(1000);
-
-	tower1.SetActionRadius(100);	
-	tower2.SetActionRadius(150);
-	tower3.SetActionRadius(300);
-
-	tower2.bullet.bulletSprite.setScale(Vector2f(1.1f, 1.1f));	
-
-	Icon icon1("gun_turret_icon");
-	Icon icon2("twin_gun_turret_icon");
-	Icon icon3("laser_turret_icon");
-	icon1.SetPosition(540, 650);
-	icon2.SetPosition(640, 650);
-	icon3.SetPosition(740, 650);
-
-	CircleShape placeArea(150);
-	Color placeAreaColor(0, 200, 0, 30);
-	Color nonPlaceAreaColor(200, 0, 0, 30);
-	placeArea.setFillColor(placeAreaColor);
-	placeArea.setOrigin(placeArea.getRadius(), placeArea.getRadius());
-	CircleShape nonPlaceArea(50);
-	nonPlaceArea.setFillColor(nonPlaceAreaColor);
-	nonPlaceArea.setOrigin(nonPlaceArea.getRadius(), nonPlaceArea.getRadius());
+	Player player;
+	UsedTowers usedTowers;
+	UsedIcons usedIcons;
+	UsedEnemies usedEnemies;
+	UsedCursors usedCursors;
+	AreasPlacingTower areasPlacingTower;
+	Portal portal;
 	
-	Enemy enemy1;
-	enemy1.SetTextureRun("enemy_run", 16, 16);
-	enemy1.SetTextureAttack("enemy_attack", 11, 16);
-	enemy1.SetSpeed(0.1f);
-	enemy1.SetDamage(5);
+	InitPlayer(player);
+	InitTowers(usedTowers);
+	InitIcons(usedIcons);
+	InitEnemies(usedEnemies);
+	InitCursors(usedCursors);
+	InitAreasPlacingTower(areasPlacingTower);
+	InitPortal(portal);
 
-	Enemy *spawnEnemy = new Enemy;
+	Coin coin("coin", 10, 1);
+	coin.SetFont(fontForMoney);
+
+	list<Tower*> towersInGame;
 	list<Enemy*> enemies;
-
-	float timerEnemySpawn = 2000;
+	list<Bullet*> bullets;
+	list<Coin*> coins;
 
 	Tower *placingTower = new Tower;
-	list<Tower*> towersInGame;
 
 	bool intersectAtPlacing = false;
 	bool establishedTower = false;
 	bool drawActionArea = false;
 
-	bool establishedEnemy = false;
-
-	list<Bullet*> bullets;
-
-	window.setKeyRepeatEnabled(false);
-	Clock clock;
-	FPS fps;
-
 	Texture mapTex;
 	mapTex.loadFromFile("map.png");
 	Sprite mapSprite;
 	mapSprite.setTexture(mapTex);
-	//mapSprite.setOrigin(mapTex.getSize().x / 2, mapTex.getSize().y / 2);
 	mapSprite.setScale(2, 2);
 
-	Texture aimTex;
-	aimTex.loadFromFile(PATH_TO_TEXTURES + "aim_cursor.png");
-	Sprite aimSprite;
-	aimSprite.setTexture(aimTex);
-	aimSprite.setOrigin(aimTex.getSize().x / 2, aimTex.getSize().y / 2);
-	aimSprite.setScale(0.15, 0.24);
+	vector<int> mapUsedEnemies = { 1, 1, 1, 2, 2, 1, 2, 1, 2, 3,
+							       2, 2, 1, 2, 2, 2, 3, 3, 2, 2 };
 
-	Texture handTex;
-	handTex.loadFromFile(PATH_TO_TEXTURES + "hand_cursor.png");
-	Sprite handSprite;
-	handSprite.setTexture(handTex);
-	handSprite.setOrigin(handTex.getSize().x / 2, handTex.getSize().y / 2);
-	handSprite.setScale(0.5, 0.5);
+	list<Enemy*> enemiesInLevel;
+	for (size_t i = 0; i < mapUsedEnemies.size(); i++)
+	{
+		Enemy* spawnEnemy = new Enemy;
+		if (mapUsedEnemies[i] == 1)
+		{
+			*spawnEnemy = usedEnemies.enemy1;
+		}
+		if (mapUsedEnemies[i] == 2)
+		{
+			*spawnEnemy = usedEnemies.enemy2;
+		}
+		if (mapUsedEnemies[i] == 3)
+		{
+			*spawnEnemy = usedEnemies.enemy3;
+		}
 
+		spawnEnemy->SetPosition(800, 800);
+		enemiesInLevel.push_back(spawnEnemy);
+	}
+	list<Enemy*>::iterator iterEnemy = enemiesInLevel.begin();
+
+	float timerEnemySpawn = 4000;
+	int difLevel = 0;
+
+	window.setKeyRepeatEnabled(false);
 	window.setMouseCursorVisible(false);
+	Clock clock;
+	FPS fps;
 
 	while (window.isOpen())
 	{
 		float time = (float)clock.getElapsedTime().asMicroseconds();
 		clock.restart();
 		time /= 1000;
-		fps.printFPS(time);
+		//fps.printFPS(time);
 
 		Event event;
 
@@ -334,27 +576,36 @@ int main()
 
 			if (event.type == Event::KeyPressed)//событие нажатия клавиши
 			{
-				if ((event.key.code == Keyboard::Num1) || (event.key.code == Keyboard::Num2) || (event.key.code == Keyboard::Num3))
+				if (event.key.code == Keyboard::Num1 || event.key.code == Keyboard::Num2 || event.key.code == Keyboard::Num3)
 				{
-					if (!establishedTower) placingTower = new Tower;
-
-					if (event.key.code == Keyboard::Num1) *placingTower = tower1;
-					if (event.key.code == Keyboard::Num2) *placingTower = tower2;
-					if (event.key.code == Keyboard::Num3) *placingTower = tower3;
-					establishedTower = true;
+					if (event.key.code == Keyboard::Num1 && player.GetMoney() >= usedTowers.tower1.GetPrice())
+					{
+						if (!establishedTower) placingTower = new Tower;
+						*placingTower = usedTowers.tower1;
+						establishedTower = true;
+					}
+					if (event.key.code == Keyboard::Num2 && player.GetMoney() >= usedTowers.tower2.GetPrice())
+					{
+						if (!establishedTower) placingTower = new Tower;
+						*placingTower = usedTowers.tower2;
+						establishedTower = true;
+					}
+					if (event.key.code == Keyboard::Num3 && player.GetMoney() >= usedTowers.tower3.GetPrice())
+					{
+						if (!establishedTower) placingTower = new Tower;
+						*placingTower = usedTowers.tower3;
+						establishedTower = true;
+					}
+					
 				}
-
-				if (event.key.code == Keyboard::G)
-				{
-					if (!establishedEnemy) spawnEnemy = new Enemy;
-					*spawnEnemy = enemy1;
-					establishedEnemy = true;
-					spawnEnemy->isActive = false;
-				}
-
 				if (event.key.code == Keyboard::Space)
 				{
-					SpawnEnemy(enemies, enemy1, player);
+					//SpawnEnemy(enemies, usedEnemies, player);
+				}
+				if (event.key.code == Keyboard::R)
+				{
+					if (drawActionArea == false) drawActionArea = true;
+					else drawActionArea = false;
 				}
 				if (event.key.code == Keyboard::Escape) window.close();
 			}
@@ -364,51 +615,56 @@ int main()
 
 		if (timerEnemySpawn <= 0)
 		{
-			timerEnemySpawn = 4000;
-			//SpawnEnemy(enemies);
-		}
+			if (difLevel >= 0 && difLevel < 5)
+			{
+				timerEnemySpawn = 4000;
+			}
+			else if (difLevel >= 5 && difLevel < 10)
+			{
+				timerEnemySpawn = 3500;
+			}
+			else if (difLevel >= 10 && difLevel < 15)
+			{
+				timerEnemySpawn = 3000;
+			}
+			else if (difLevel >= 15)
+			{
+				timerEnemySpawn = 2500;
+			}
 
-		drawActionArea = false;
-		if (Keyboard::isKeyPressed(Keyboard::R)) drawActionArea = true;
+			if (iterEnemy != enemiesInLevel.end())
+			{
+				enemies.push_back(*iterEnemy);
+				iterEnemy++;
+			}
+			difLevel++;
+		}
+		intersectAtPlacing = false;
 
 		window.clear(Color::White);
 
-		window.draw(mapSprite);
-
-		intersectAtPlacing = false;
-		
+		window.draw(mapSprite);		
+	
+		PortalUpdateAndDraw(portal, window, time);
 		TowerUpdateAndDraw(towersInGame, enemies, bullets, player, placingTower, establishedTower, intersectAtPlacing, drawActionArea, time, window);
 		BulletUpdateAndDraw(bullets, enemies, window, time);		
-		EnemiesUpdateAndDraw(enemies, towersInGame, player, window, time);
+		EnemiesUpdateAndDraw(enemies, towersInGame, player, coins, coin, window, time);
 
-		if (Mouse::isButtonPressed(Mouse::Left) && !establishedTower && !establishedEnemy && player.canShot)
+		if (Mouse::isButtonPressed(Mouse::Left) && !establishedTower && player.canShot)
 		{
 			Bullet *bullet = new Bullet;
 			*bullet = player.GetBullet();
-			bullet->SetPosition(player.GetPosition());
+			bullet->SetStartPosition(player.GetPosition());
 			bullet->SetEnemyPos(mousePos);
 			bullets.push_back(bullet);
 			player.canShot = false;
-		}
-
-		if (establishedEnemy)
-		{
-			spawnEnemy->SetPosition(mousePos);
-			if (Mouse::isButtonPressed(Mouse::Left))
-			{
-				establishedEnemy = false;
-				spawnEnemy->isActive = true;
-				enemies.push_back(spawnEnemy);
-				player.canShot = false;
-			}
-			spawnEnemy->Draw(window);
 		}
 
 		//Установка башни
 		if (establishedTower)
 		{
 			placingTower->SetPosition(mousePos);
-			if (placeArea.getGlobalBounds().contains(mousePos) && !nonPlaceArea.getGlobalBounds().contains(mousePos) && !intersectAtPlacing)
+			if (areasPlacingTower.placingArea.getGlobalBounds().contains(mousePos) && !areasPlacingTower.notPlacingArea.getGlobalBounds().contains(mousePos) && !intersectAtPlacing)
 			{
 				placingTower->spriteMap.sprite.setColor(Color::Green);
 				window.draw(placingTower->actionArea);
@@ -418,7 +674,7 @@ int main()
 					placingTower->isActive = true;
 					placingTower->spriteMap.sprite.setColor(Color::White);
 					towersInGame.push_back(placingTower);
-					cout << towersInGame.size() << endl;
+					player.SubCoins(placingTower->GetPrice());
 					player.canShot = false;
 				}
 			}
@@ -427,15 +683,17 @@ int main()
 				placingTower->spriteMap.sprite.setColor(Color::Red);
 			}
 			placingTower->Update(time);
-			placeArea.setPosition(player.GetPosition().x, player.GetPosition().y);
-			nonPlaceArea.setPosition(player.GetPosition().x, player.GetPosition().y);
-			window.draw(placeArea);
-			window.draw(nonPlaceArea);
+			areasPlacingTower.placingArea.setPosition(player.GetPosition().x, player.GetPosition().y);
+			areasPlacingTower.notPlacingArea.setPosition(player.GetPosition().x, player.GetPosition().y);
+			window.draw(areasPlacingTower.placingArea);
+			window.draw(areasPlacingTower.notPlacingArea);
 			window.draw(placingTower->spriteMap.sprite);
 		}
 
 		player.Update(time);
 		player.Draw(window);
+
+		CoinsUpdateAndDraw(coins, window, time);
 
 		if (player.GetPosition().x < 640 || player.GetPosition().x > 1472 || player.GetPosition().y < 360 || player.GetPosition().y > 1752)
 		{
@@ -450,23 +708,25 @@ int main()
 		else view.setCenter(player.GetPosition());
 		window.setView(view);
 
-		icon1.SetPosition(view.getCenter() + Vector2f(-100, 300));
-		icon1.Draw(window);
-		icon2.SetPosition(view.getCenter() + Vector2f(0, 300));
-		icon2.Draw(window);
-		icon3.SetPosition(view.getCenter() + Vector2f(100, 300));
-		icon3.Draw(window);
-
-		if (establishedTower || establishedEnemy)
+		if (establishedTower)
 		{
-			handSprite.setPosition(mousePos);
-			window.draw(handSprite);
+			usedCursors.handCursor.setPosition(mousePos);
+			window.draw(usedCursors.handCursor);
 		}
 		else
 		{
-			aimSprite.setPosition(mousePos);
-			window.draw(aimSprite);
+			usedCursors.aimCursor.setPosition(mousePos);
+			window.draw(usedCursors.aimCursor);
 		}
+
+		ActiveDisactiveIconsTower(usedIcons, usedTowers, player);
+		IconsUpdateAndDraw(usedIcons, usedTowers, player, view, window);
+
+		ostringstream playerMoneyString;
+		playerMoneyString << player.GetMoney();
+		playerMoneyText.setString("Money: " + playerMoneyString.str());
+		playerMoneyText.setPosition(view.getCenter() + Vector2f(-540, 260));
+		window.draw(playerMoneyText);
 		
 		window.display();
 	}

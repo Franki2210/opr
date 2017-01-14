@@ -47,10 +47,13 @@
     <ClInclude Include="Player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Animation.h">
+    <ClInclude Include="CalcHelp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CalcHelp.h">
+    <ClInclude Include="Coin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Portal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
