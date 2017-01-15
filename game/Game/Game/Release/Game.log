@@ -1,0 +1,12 @@
+﻿  Main.cpp
+c:\users\димон\documents\visual studio 2015\projects\game\game\Coin.h(55): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
+c:\users\димон\documents\visual studio 2015\projects\game\game\Coin.h(57): warning C4244: 'argument': conversion from 'float' to 'sf::Uint8', possible loss of data
+c:\users\димон\documents\visual studio 2015\projects\game\game\Coin.h(58): warning C4244: 'argument': conversion from 'float' to 'sf::Uint8', possible loss of data
+Main.cpp(656): warning C4305: 'argument': truncation from 'double' to 'float'
+  Generating code
+  8 of 989 functions ( 0.8%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  Game.vcxproj -> C:\Users\Димон\Documents\Visual Studio 2015\Projects\Game\Release\Game.exe
+  Game.vcxproj -> C:\Users\Димон\Documents\Visual Studio 2015\Projects\Game\Release\Game.pdb (Full PDB)

@@ -52,7 +52,7 @@ public:
 			if (currFrame > spriteMap.GetColumns()) currFrame = 0;
 			spriteMap.SetFrame((int)currFrame);
 			position = Vector2f(position.x, position.y - 0.04f * time);
-			currAlpha -= byte(0.04 * time);
+			currAlpha -= 0.15 * time;
 			if (currAlpha < 0) currAlpha = 0;
 			spriteMap.sprite.setColor(Color(255, 255, 255, currAlpha));
 			text.setColor(Color(255, 255, 255, currAlpha));
@@ -75,7 +75,7 @@ private:
 	float timerToDisappearance = 2000;
 	float currFrame = 0;
 	Vector2f position;
-	byte currAlpha = 255;
+	float currAlpha = 255;
 	int value = 0;
 	Font font;
 	Text text;

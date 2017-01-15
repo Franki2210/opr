@@ -9,7 +9,21 @@
 #include "Player.h"
 #include "Coin.h"
 #include "Portal.h"
+#include "Bonus.h"
 
+/*
+TODO: 
+  Сделать препятствия
+	по карте (возможно) (какие-либо объекты)
+  Сделать уровни
+    каждый уровень даёт испробывать новую пушку (в идеале)
+	с каждым уровнем сложнее
+  Добавить звуки и музыку
+  Добавить основное меню
+  Добавить паузу
+  Добавить меню паузы
+  Добавить интерфейс
+*/
 class Icon
 {
 public:
@@ -110,6 +124,26 @@ struct UsedPortal
 {
 	SpriteMap spriteMap;
 };
+struct UsedBonuses
+{
+	Bonus fireAcceleration;
+	Bonus speedIncrease;
+	Bonus damageIncrease;
+	Bonus healthIncrease;
+};
+
+struct ActiveGameObjects
+{
+
+};
+
+struct Obstacles
+{
+	RectangleShape topObstacle;
+	RectangleShape downObstacle;
+	RectangleShape leftObstacle;
+	RectangleShape rightObstacle;
+};
 
 struct TexturesEnemies
 {
@@ -121,6 +155,13 @@ struct TexturesPlayer
 	Texture idle;
 	Texture run;
 };
+struct TextureBonuses
+{
+	Texture fireAccelTex;
+	Texture speedIncTex;
+	Texture damageIncTex;
+	Texture healthIncTex;
+};
 
 struct Textures
 {
@@ -128,6 +169,7 @@ struct Textures
 	TexturesEnemies enemie2;
 	TexturesEnemies enemie3;
 	TexturesPlayer player;
+	TextureBonuses bonuses;
 	Texture tower1;
 	Texture tower2;
 	Texture tower3;
@@ -145,46 +187,72 @@ void SpawnCoin(list<Coin*> & coins, Coin & coin, int value, Vector2f position)
 	newCoin->SetValue(value);
 	coins.push_back(newCoin);
 }
-
-void ActiveDisactiveIconsTower(UsedIcons & usedIcons, UsedTowers & usedTowers, Player & player)
+void SpawnBonus(list<Bonus*> & bonuses, UsedBonuses & usedBonuses, Vector2f position)
 {
-	if (usedIcons.icon1.GetActive() && player.GetMoney() < usedTowers.tower1.GetPrice())
+	int chanceFall = rand() % 100;
+	if (chanceFall <= 30)
 	{
-		usedIcons.icon1.SetActive(false);
-	}
-	else if (!usedIcons.icon1.GetActive() && player.GetMoney() >= usedTowers.tower1.GetPrice())
-	{
-		usedIcons.icon1.SetActive(true);
-	}
-
-	if (usedIcons.icon2.GetActive() && player.GetMoney() < usedTowers.tower2.GetPrice())
-	{
-		usedIcons.icon2.SetActive(false);
-	}
-	else if (!usedIcons.icon2.GetActive() && player.GetMoney() >= usedTowers.tower2.GetPrice())
-	{
-		usedIcons.icon2.SetActive(true);
-	}
-
-	if (usedIcons.icon3.GetActive() && player.GetMoney() < usedTowers.tower3.GetPrice())
-	{
-		usedIcons.icon3.SetActive(false);
-	}
-	else if (!usedIcons.icon3.GetActive() && player.GetMoney() >= usedTowers.tower3.GetPrice())
-	{
-		usedIcons.icon3.SetActive(true);
+		Bonus *newBonus = new Bonus;
+		int chanceBonus = rand() % 4;
+		if (chanceBonus == 0)
+		{
+			*newBonus = usedBonuses.damageIncrease;
+		}
+		if (chanceBonus == 1)
+		{
+			*newBonus = usedBonuses.fireAcceleration;
+		}
+		if (chanceBonus == 2)
+		{
+			*newBonus = usedBonuses.healthIncrease;
+		}
+		if (chanceBonus == 3)
+		{
+			*newBonus = usedBonuses.speedIncrease;
+		}
+		newBonus->SetPosition(position);
+		bonuses.push_back(newBonus);
 	}
 }
 
-void TowerUpdateAndDraw(list<Tower*> & towersInGame, list<Enemy*> & enemies, list<Bullet*> & bullets, Player & player, Tower *placingTower, bool &establishedTower,
+void PlayerShot(Player & player, list<Bullet*> & bullets, Vector2f mousePos)
+{
+	Bullet *bullet = new Bullet;
+	*bullet = player.GetBullet();
+	bullet->SetStartPosition(player.GetPosition());
+	bullet->SetEnemyPos(mousePos);
+	bullets.push_back(bullet);
+	player.canShot = false;
+}
+void CheckObstacles(Obstacles & obstacles, Player & player)
+{
+	if (obstacles.topObstacle.getGlobalBounds().intersects(player.GetGlobalBounds()))
+	{
+		player.SetObstacle(obstacles.topObstacle.getGlobalBounds());
+	}
+	else if (obstacles.downObstacle.getGlobalBounds().intersects(player.GetGlobalBounds()))
+	{
+		player.SetObstacle(obstacles.downObstacle.getGlobalBounds());
+	}
+	else if (obstacles.leftObstacle.getGlobalBounds().intersects(player.GetGlobalBounds()))
+	{
+		player.SetObstacle(obstacles.leftObstacle.getGlobalBounds());
+	}
+	else if (obstacles.rightObstacle.getGlobalBounds().intersects(player.GetGlobalBounds()))
+	{
+		player.SetObstacle(obstacles.rightObstacle.getGlobalBounds());
+	}
+}
+
+void TowerUpdateAndDraw(list<Tower*> & towers, list<Enemy*> & enemies, list<Bullet*> & bullets, Player & player, Tower *placingTower, bool &towerInstallation,
 						bool & intersectAtPlacing, bool & drawActionArea, float & time, RenderWindow & window)
 {
-	for (auto it = towersInGame.begin(); it != towersInGame.end();)
+	for (auto it = towers.begin(); it != towers.end();)
 	{
 		Tower *tower = *it;
 		if (tower->isDestroy)
 		{
-			it = towersInGame.erase(it);
+			it = towers.erase(it);
 			delete(tower);
 		}
 		else
@@ -226,13 +294,13 @@ void TowerUpdateAndDraw(list<Tower*> & towersInGame, list<Enemy*> & enemies, lis
 			}
 
 			//Препятствие для игрока
-			if (tower->spriteMap.sprite.getGlobalBounds().contains(player.GetPosition()))
+			if (tower->spriteMap.sprite.getGlobalBounds().intersects(player.GetGlobalBounds()))
 			{
 				player.SetObstacle(tower->spriteMap.sprite.getGlobalBounds());
 			}
 
 			//Если ставим новую башню...
-			if (establishedTower)
+			if (towerInstallation)
 			{
 				//Не даём поставить новую башню на место установленной
 				if (tower->spriteMap.sprite.getGlobalBounds().intersects(placingTower->spriteMap.sprite.getGlobalBounds()))
@@ -253,7 +321,8 @@ void TowerUpdateAndDraw(list<Tower*> & towersInGame, list<Enemy*> & enemies, lis
 		}
 	}
 }
-void EnemiesUpdateAndDraw(list<Enemy*> & enemies, list<Tower*> & towersInGame, Player & player, list<Coin*> & coins, Coin & coin, RenderWindow & window, float & time)
+void EnemiesUpdateAndDraw(list<Enemy*> & enemies, list<Tower*> & towers, list<Bonus*> & bonuses, UsedBonuses & usedBonuses, Player & player, 
+							list<Coin*> & coins, Coin & coin, RenderWindow & window, float & time)
 {
 	for (auto itEnemy = enemies.begin(); itEnemy != enemies.end();)
 	{
@@ -262,21 +331,22 @@ void EnemiesUpdateAndDraw(list<Enemy*> & enemies, list<Tower*> & towersInGame, P
 		if (enemy->isDestroy)
 		{
 			//TODO: Звук смерти врага
-			SpawnCoin(coins, coin, enemy->GetCoins(), enemy->GetPosition());
+			SpawnCoin(coins, coin, enemy->GetCoins(), itPosition);
 			player.AddCoins(enemy->GetCoins());
+			SpawnBonus(bonuses, usedBonuses, itPosition);
 			itEnemy = enemies.erase(itEnemy);
 			delete(enemy);
 		}
 		else
 		{
 			float minDistance = 5000;
-			if (!towersInGame.empty())
+			if (!towers.empty())
 			{
 				//Находим близжайшую башню
 				Tower *nearTower = enemy->tower;
-				nearTower = *towersInGame.begin();
+				nearTower = *towers.begin();
 				minDistance = CalculateDistance(enemy->GetPosition(), nearTower->GetPosition());
-				for (auto tower = towersInGame.begin(); tower != towersInGame.end(); tower++)
+				for (auto tower = towers.begin(); tower != towers.end(); tower++)
 				{
 					float distance = CalculateDistance(itPosition, (*tower)->GetPosition());
 					if (distance < minDistance)
@@ -289,7 +359,7 @@ void EnemiesUpdateAndDraw(list<Enemy*> & enemies, list<Tower*> & towersInGame, P
 				if (enemy->attackingPlayer) enemy->attackingPlayer = false;
 			}
 
-			if (minDistance > CalculateDistance(itPosition, player.GetPosition()) || towersInGame.empty())
+			if (minDistance > CalculateDistance(itPosition, player.GetPosition()) || towers.empty())
 			{
 				enemy->SetTarget(&player);
 				if (!enemy->attackingPlayer) enemy->attackingPlayer = true;
@@ -360,7 +430,33 @@ void CoinsUpdateAndDraw(list<Coin*> & coins, RenderWindow & window, float time)
 }
 void IconsUpdateAndDraw(UsedIcons & usedIcons, UsedTowers & usedTowers, Player & player, View & view, RenderWindow & window)
 {
-	ActiveDisactiveIconsTower(usedIcons, usedTowers, player);
+	if (usedIcons.icon1.GetActive() && player.GetMoney() < usedTowers.tower1.GetPrice())
+	{
+		usedIcons.icon1.SetActive(false);
+	}
+	else if (!usedIcons.icon1.GetActive() && player.GetMoney() >= usedTowers.tower1.GetPrice())
+	{
+		usedIcons.icon1.SetActive(true);
+	}
+
+	if (usedIcons.icon2.GetActive() && player.GetMoney() < usedTowers.tower2.GetPrice())
+	{
+		usedIcons.icon2.SetActive(false);
+	}
+	else if (!usedIcons.icon2.GetActive() && player.GetMoney() >= usedTowers.tower2.GetPrice())
+	{
+		usedIcons.icon2.SetActive(true);
+	}
+
+	if (usedIcons.icon3.GetActive() && player.GetMoney() < usedTowers.tower3.GetPrice())
+	{
+		usedIcons.icon3.SetActive(false);
+	}
+	else if (!usedIcons.icon3.GetActive() && player.GetMoney() >= usedTowers.tower3.GetPrice())
+	{
+		usedIcons.icon3.SetActive(true);
+	}
+
 	usedIcons.icon1.SetPosition(view.getCenter() + Vector2f(-100, 300));
 	usedIcons.icon1.Draw(window);
 	usedIcons.icon2.SetPosition(view.getCenter() + Vector2f(0, 300));
@@ -372,6 +468,34 @@ void PortalUpdateAndDraw(Portal & portal, RenderWindow & window, float time)
 {
 	portal.Update(time);
 	portal.Draw(window);
+}
+void PlayerUpdateAndDraw(Player & player, RenderWindow & window, float time)
+{
+	player.Update(time);
+	player.Draw(window);
+}
+void BonusesUpdateAndDraw(list<Bonus*> & bonuses, Player & player, RenderWindow & window, float time)
+{
+	for (auto it = bonuses.begin(); it != bonuses.end();)
+	{
+		Bonus *bonus = *it;
+		if (bonus->isDestroy)
+		{
+			it = bonuses.erase(it);
+			delete(bonus);
+		}
+		else
+		{
+			if (bonus->GetGlobalBound().contains(player.GetPosition()))
+			{
+				player.AddBonus(*bonus);
+				bonus->isDestroy = true;
+			}
+			bonus->UpdateOnMap(time);
+			bonus->Draw(window);
+			it++;
+		}
+	}
 }
 
 void InitCursors(UsedCursors & usedCursors)
@@ -483,7 +607,9 @@ void InitPlayer(Player & player, Textures & textures)
 	textures.player.run.loadFromFile(PATH_TO_TEXTURES + "player_run.png");
 	player.SetSpriteMaps(textures.player.idle, 22, 8, textures.player.run, 22, 8);
 	player.SetPosition(800, 600);
+	player.SetSpeed(0.15f);
 	player.SetBullet("bullet", 5, 1.f);
+	player.SetTimeBetweenShots(150.0f);
 	player.SetMaxHp(50);
 }
 void InitAreasPlacingTower(AreasPlacingTower & areasPlacing)
@@ -510,11 +636,43 @@ void InitCoin(Coin & coin, Textures & textures, Font font)
 	coin.SetSpriteMap(textures.coin, 10, 1);
 	coin.SetFont(font);
 }
+void InitMap(Sprite & map, Textures & textures)
+{
+	textures.map.loadFromFile(PATH_TO_TEXTURES + "map/map.png");
+	map.setTexture(textures.map);
+	map.setScale(2, 2);
+}
+void InitObstacles(Obstacles & obstacles)
+{
+	obstacles.topObstacle.setPosition(0, 0);
+	obstacles.topObstacle.setSize(Vector2f(2025, 74));
+	obstacles.downObstacle.setPosition(0, 1994);
+	obstacles.downObstacle.setSize(Vector2f(2025, 74));
+	obstacles.leftObstacle.setPosition(0, 74);
+	obstacles.leftObstacle.setSize(Vector2f(95, 1920));
+	obstacles.rightObstacle.setPosition(2018, 74);
+	obstacles.rightObstacle.setSize(Vector2f(95, 1920));
+}
+void InitBonuses(UsedBonuses & usedBonuses, Textures & textures)
+{
+	textures.bonuses.damageIncTex.loadFromFile(PATH_TO_TEXTURES + "bonuses/damage_increase.png");
+	textures.bonuses.healthIncTex.loadFromFile(PATH_TO_TEXTURES + "bonuses/health_increase.png");
+	textures.bonuses.speedIncTex.loadFromFile(PATH_TO_TEXTURES + "bonuses/speed_increase.png");
+	textures.bonuses.fireAccelTex.loadFromFile(PATH_TO_TEXTURES + "bonuses/fire_acceleration.png");
+
+	usedBonuses.damageIncrease.SetBonus("damageInc", textures.bonuses.damageIncTex, 15, 8000, 10000);
+	usedBonuses.healthIncrease.SetBonus("healthInc", textures.bonuses.healthIncTex, 20, 8000);
+	usedBonuses.speedIncrease.SetBonus("speedInc", textures.bonuses.speedIncTex, 0.1, 8000, 10000);
+	usedBonuses.fireAcceleration.SetBonus("fireAccel", textures.bonuses.fireAccelTex, 50, 8000, 10000);
+	usedBonuses.damageIncrease.SetScale(0.5f, 0.5f);
+	usedBonuses.healthIncrease.SetScale(0.5f, 0.5f);
+	usedBonuses.speedIncrease.SetScale(0.5f, 0.5f);
+	usedBonuses.fireAcceleration.SetScale(0.5f, 0.5f);
+}
 
 int main()
 {
 	RenderWindow window(VideoMode(1280, 720), "Gama", Style::Default);
-	window.setFramerateLimit(150);
 	View view;
 	view.reset(FloatRect(0, 0, 1280, 720));
 
@@ -532,6 +690,9 @@ int main()
 	UsedCursors usedCursors;
 	AreasPlacingTower areasPlacingTower;
 	Portal portal;
+	Obstacles obstacles;
+	UsedBonuses usedBonuses;
+	Coin coin;
 	
 	InitPlayer(player, textures);
 	InitTowers(usedTowers, textures);
@@ -540,33 +701,29 @@ int main()
 	InitCursors(usedCursors);
 	InitAreasPlacingTower(areasPlacingTower);
 	InitPortal(portal, textures);
-	
-	Coin coin;
+	InitObstacles(obstacles);
+	InitBonuses(usedBonuses, textures);
 	InitCoin(coin, textures, fontForMoney);
 
-	list<Tower*> towersInGame;
+	list<Tower*> towers;
 	list<Enemy*> enemies;
 	list<Bullet*> bullets;
 	list<Coin*> coins;
+	list<Bonus*> bonuses;
 
 	Tower *placingTower = new Tower;
 
 	bool intersectAtPlacing = false;
-	bool establishedTower = false;
+	bool towerInstallation = false;
 	bool drawActionArea = false;
 
-	Texture mapTex;
-	mapTex.loadFromFile("map.png");
 	Sprite mapSprite;
-	mapSprite.setTexture(mapTex);
-	mapSprite.setScale(2, 2);
+	InitMap(mapSprite, textures);
 
-	vector<int> mapUsedEnemies = { 1,1,2,2,1,3,3,3, 1, 1, 1, 1, 1, 1, 1, 1,
-									2, 3,2,1,2,3,2,1,2,2,2,1,2,3,3,3,2,1,2,2,3,3,2,2};
+	vector<int> mapUsedEnemies = {1,1,2,2,1,3,3,3,1,1,1,1,1,1,1,1,2,3,2,1,2,3,2,1,2,2,2,1,2,3,3,3,2,1,2,2,3,3,2,2};
 
 	vector<Enemy*> enemiesInLevel;
 	enemiesInLevel.reserve(mapUsedEnemies.size());
-	cout << 11 << endl;
 	for (size_t i = 0; i < mapUsedEnemies.size(); i++)
 	{
 		Enemy *newEnemy = new Enemy;
@@ -591,6 +748,7 @@ int main()
 
 	window.setKeyRepeatEnabled(false);
 	window.setMouseCursorVisible(false);
+	window.setFramerateLimit(150);
 	Clock clock;
 	FPS fps;
 
@@ -599,7 +757,7 @@ int main()
 		float time = (float)clock.getElapsedTime().asMicroseconds();
 		clock.restart();
 		time /= 1000;
-		//fps.printFPS(time);
+		fps.printFPS(time);
 
 		Event event;
 
@@ -618,21 +776,21 @@ int main()
 				{
 					if (event.key.code == Keyboard::Num1 && player.GetMoney() >= usedTowers.tower1.GetPrice())
 					{
-						if (!establishedTower) placingTower = new Tower;
+						if (!towerInstallation) placingTower = new Tower;
 						*placingTower = usedTowers.tower1;
-						establishedTower = true;
+						towerInstallation = true;
 					}
 					if (event.key.code == Keyboard::Num2 && player.GetMoney() >= usedTowers.tower2.GetPrice())
 					{
-						if (!establishedTower) placingTower = new Tower;
+						if (!towerInstallation) placingTower = new Tower;
 						*placingTower = usedTowers.tower2;
-						establishedTower = true;
+						towerInstallation = true;
 					}
 					if (event.key.code == Keyboard::Num3 && player.GetMoney() >= usedTowers.tower3.GetPrice())
 					{
-						if (!establishedTower) placingTower = new Tower;
+						if (!towerInstallation) placingTower = new Tower;
 						*placingTower = usedTowers.tower3;
-						establishedTower = true;
+						towerInstallation = true;
 					}
 					
 				}
@@ -684,22 +842,18 @@ int main()
 		window.draw(mapSprite);		
 	
 		PortalUpdateAndDraw(portal, window, time);
-		TowerUpdateAndDraw(towersInGame, enemies, bullets, player, placingTower, establishedTower, intersectAtPlacing, drawActionArea, time, window);
+		TowerUpdateAndDraw(towers, enemies, bullets, player, placingTower, towerInstallation, intersectAtPlacing, drawActionArea, time, window);
 		BulletUpdateAndDraw(bullets, enemies, window, time);		
-		EnemiesUpdateAndDraw(enemies, towersInGame, player, coins, coin, window, time);
+		EnemiesUpdateAndDraw(enemies, towers, bonuses, usedBonuses, player, coins, coin, window, time);
+		BonusesUpdateAndDraw(bonuses, player, window, time);
 
-		if (Mouse::isButtonPressed(Mouse::Left) && !establishedTower && player.canShot)
+		if (Mouse::isButtonPressed(Mouse::Left) && !towerInstallation && player.canShot)
 		{
-			Bullet *bullet = new Bullet;
-			*bullet = player.GetBullet();
-			bullet->SetStartPosition(player.GetPosition());
-			bullet->SetEnemyPos(mousePos);
-			bullets.push_back(bullet);
-			player.canShot = false;
+			PlayerShot(player, bullets, mousePos);
 		}
 
 		//Установка башни
-		if (establishedTower)
+		if (towerInstallation)
 		{
 			placingTower->SetPosition(mousePos);
 			if (areasPlacingTower.placingArea.getGlobalBounds().contains(mousePos) && !areasPlacingTower.notPlacingArea.getGlobalBounds().contains(mousePos) && !intersectAtPlacing)
@@ -708,10 +862,10 @@ int main()
 				window.draw(placingTower->actionArea);
 				if (Mouse::isButtonPressed(Mouse::Left))
 				{
-					establishedTower = false;
+					towerInstallation = false;
 					placingTower->isActive = true;
 					placingTower->spriteMap.sprite.setColor(Color::White);
-					towersInGame.push_back(placingTower);
+					towers.push_back(placingTower);
 					player.SubCoins(placingTower->GetPrice());
 					player.canShot = false;
 				}
@@ -721,15 +875,15 @@ int main()
 				placingTower->spriteMap.sprite.setColor(Color::Red);
 			}
 			placingTower->Update(time);
-			areasPlacingTower.placingArea.setPosition(player.GetPosition().x, player.GetPosition().y);
-			areasPlacingTower.notPlacingArea.setPosition(player.GetPosition().x, player.GetPosition().y);
+			areasPlacingTower.placingArea.setPosition(player.GetPosition());
+			areasPlacingTower.notPlacingArea.setPosition(player.GetPosition());
 			window.draw(areasPlacingTower.placingArea);
 			window.draw(areasPlacingTower.notPlacingArea);
 			window.draw(placingTower->spriteMap.sprite);
 		}
 
-		player.Update(time);
-		player.Draw(window);
+		CheckObstacles(obstacles, player);
+		PlayerUpdateAndDraw(player, window, time);
 
 		CoinsUpdateAndDraw(coins, window, time);
 
@@ -746,7 +900,7 @@ int main()
 		else view.setCenter(player.GetPosition());
 		window.setView(view);
 
-		if (establishedTower)
+		if (towerInstallation)
 		{
 			usedCursors.handCursor.setPosition(mousePos);
 			window.draw(usedCursors.handCursor);
@@ -757,7 +911,6 @@ int main()
 			window.draw(usedCursors.aimCursor);
 		}
 
-		ActiveDisactiveIconsTower(usedIcons, usedTowers, player);
 		IconsUpdateAndDraw(usedIcons, usedTowers, player, view, window);
 
 		ostringstream playerMoneyString;

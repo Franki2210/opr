@@ -52,6 +52,12 @@ public:
 	{
 		return maxHp;
 	}
+	void AddHp(float value)
+	{
+		if (currHp + value > maxHp) currHp = maxHp;
+		else currHp += value;
+		hpSprite.setTextureRect(IntRect(0, 0, (int)(currHp / maxHp * 50), 10));
+	}
 	float GetCurrentHp()
 	{
 		return currHp;

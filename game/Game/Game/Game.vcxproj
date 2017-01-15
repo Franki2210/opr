@@ -76,6 +76,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Bonus.h" />
     <ClInclude Include="Bullet.h" />
     <ClInclude Include="CalcHelp.h" />
     <ClInclude Include="Coin.h" />

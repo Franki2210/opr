@@ -2,6 +2,7 @@
 #include "Header.h"
 #include "Entity.h"
 #include "Bullet.h"
+#include "Bonus.h"
 
 class Player : public Entity
 {
@@ -29,6 +30,10 @@ public:
 	void SetObstacle(FloatRect obstacle_)
 	{
 		obstacle = obstacle_;
+	}
+	FloatRect GetGlobalBounds()
+	{
+		return spriteMapRun.sprite.getGlobalBounds();
 	}
 
 	//Направление движения
@@ -102,6 +107,19 @@ public:
 	{
 		timeBetweenShots = timeBetween;
 	}
+	void SetSpeed(float speed_)
+	{
+		speed = speed_;
+	}
+	void SetDamage(float damage_)
+	{
+		bullet.SetDamage(bullet.GetDamage());
+	}
+
+	void AddBonus(Bonus bonus)
+	{
+		activeBonuses.push_back(bonus);
+	}
 
 	//Денюжка
 	void AddCoins(int coin)
@@ -117,10 +135,64 @@ public:
 		return coins;
 	}
 
+	void BonusUpdate(list<Bonus> & activeBonus, float time)
+	{
+		for (auto it = activeBonuses.begin(); it != activeBonuses.end();)
+		{
+			if (it->isDisactive)
+			{
+				if (it->GetName() == "speedInc")
+				{
+					speed -= it->GetValue();
+				}
+				else if (it->GetName() == "fireAccel")
+				{
+					timeBetweenShots += it->GetValue();
+				}
+				else if (it->GetName() == "damageInc")
+				{
+					bullet.SetDamage(bullet.GetDamage() - it->GetValue());
+					it->isUsed = true;
+				}
+				it = activeBonuses.erase(it);
+			}
+			else
+			{
+				if (!it->isUsed)
+				{
+					if (it->GetName() == "healthInc")
+					{
+						AddHp(it->GetValue());
+						it->isDisactive = true;
+					}
+					else if (it->GetName() == "speedInc")
+					{
+						speed += it->GetValue();
+						it->isUsed = true;
+					}
+					else if (it->GetName() == "fireAccel")
+					{
+						timeBetweenShots -= it->GetValue();
+						it->isUsed = true;
+					}
+					else if (it->GetName() == "damageInc")
+					{
+						bullet.SetDamage(bullet.GetDamage() + it->GetValue());
+						it->isUsed = true;
+					}
+				}
+				it->UpdateOnPlayer(time);
+				it++;
+			}
+		}
+	}
+
 	void Update(float const & time)
 	{
 		Vector2f moveVector = { 0, 0 };
 		isMove = false;
+
+		BonusUpdate(activeBonuses, time);
 
 		if (Keyboard::isKeyPressed(Keyboard::W) || Keyboard::isKeyPressed(Keyboard::A) ||
 			Keyboard::isKeyPressed(Keyboard::S) || Keyboard::isKeyPressed(Keyboard::D))
@@ -175,7 +247,7 @@ public:
 		DrawHp(window);
 	}
 private:
-	float speed = 0.15f;
+	float speed;
 	Direction direction = Direction::Up;
 	FloatRect obstacle;
 	Bullet bullet;
@@ -189,4 +261,6 @@ private:
 	float speedAnimation;
 	int score;
 	int coins = 0;
+
+	list<Bonus> activeBonuses;
 };
