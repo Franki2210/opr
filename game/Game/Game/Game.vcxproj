@@ -79,6 +79,7 @@
     <ClInclude Include="Bonus.h" />
     <ClInclude Include="Bullet.h" />
     <ClInclude Include="CalcHelp.h" />
+    <ClInclude Include="ChangeHpView.h" />
     <ClInclude Include="Coin.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="Entity.h" />

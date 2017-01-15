@@ -52,7 +52,7 @@ public:
 			if (currFrame > spriteMap.GetColumns()) currFrame = 0;
 			spriteMap.SetFrame((int)currFrame);
 			position = Vector2f(position.x, position.y - 0.04f * time);
-			currAlpha -= 0.15 * time;
+			currAlpha -= 0.15f * time;
 			if (currAlpha < 0) currAlpha = 0;
 			spriteMap.sprite.setColor(Color(255, 255, 255, currAlpha));
 			text.setColor(Color(255, 255, 255, currAlpha));

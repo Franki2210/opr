@@ -10,6 +10,7 @@
 #include "Coin.h"
 #include "Portal.h"
 #include "Bonus.h"
+#include "ChangeHpView.h"
 
 /*
 TODO: 
@@ -90,6 +91,14 @@ private:
 	bool isActive = false;
 };
 
+struct Obstacles
+{
+	RectangleShape topObstacle;
+	RectangleShape downObstacle;
+	RectangleShape leftObstacle;
+	RectangleShape rightObstacle;
+};
+
 struct AreasPlacingTower
 {
 	CircleShape placingArea;
@@ -120,10 +129,6 @@ struct UsedCursors
 	Texture aimTex;
 	Texture handTex;
 };
-struct UsedPortal
-{
-	SpriteMap spriteMap;
-};
 struct UsedBonuses
 {
 	Bonus fireAcceleration;
@@ -132,17 +137,27 @@ struct UsedBonuses
 	Bonus healthIncrease;
 };
 
-struct ActiveGameObjects
+struct UsedEntities
 {
-
+	UsedIcons icons;
+	UsedTowers towers;
+	UsedEnemies enemies;
+	UsedCursors cursors;
+	UsedBonuses bonuses;
+	ChangeHpView changeHpView;
 };
 
-struct Obstacles
+struct Entities
 {
-	RectangleShape topObstacle;
-	RectangleShape downObstacle;
-	RectangleShape leftObstacle;
-	RectangleShape rightObstacle;
+	Player player;
+	Portal portal;
+	Obstacles obstacles;
+	list<Tower*> towers;
+	list<Enemy*> enemies;
+	list<Bullet*> bullets;
+	list<Coin*> coins;
+	list<Bonus*> bonuses;
+	list<ChangeHpView*> changeHpViews;
 };
 
 struct TexturesEnemies
@@ -214,15 +229,23 @@ void SpawnBonus(list<Bonus*> & bonuses, UsedBonuses & usedBonuses, Vector2f posi
 		bonuses.push_back(newBonus);
 	}
 }
+void SpawnChangeHpView(list<ChangeHpView*> & changeHpViews, ChangeHpView & usedChangeHpView, float damage, Vector2f position)
+{
+	ChangeHpView* newChangeHpView = new ChangeHpView;
+	*newChangeHpView = usedChangeHpView;
+	newChangeHpView->SetPosition(position);
+	newChangeHpView->SetValue(damage);
+	changeHpViews.push_back(newChangeHpView);
+}
 
-void PlayerShot(Player & player, list<Bullet*> & bullets, Vector2f mousePos)
+void PlayerShot(Entities & entities, Vector2f mousePos)
 {
 	Bullet *bullet = new Bullet;
-	*bullet = player.GetBullet();
-	bullet->SetStartPosition(player.GetPosition());
+	*bullet = entities.player.GetBullet();
+	bullet->SetStartPosition(entities.player.GetPosition());
 	bullet->SetEnemyPos(mousePos);
-	bullets.push_back(bullet);
-	player.canShot = false;
+	entities.bullets.push_back(bullet);
+	entities.player.canShot = false;
 }
 void CheckObstacles(Obstacles & obstacles, Player & player)
 {
@@ -244,15 +267,15 @@ void CheckObstacles(Obstacles & obstacles, Player & player)
 	}
 }
 
-void TowerUpdateAndDraw(list<Tower*> & towers, list<Enemy*> & enemies, list<Bullet*> & bullets, Player & player, Tower *placingTower, bool &towerInstallation,
-						bool & intersectAtPlacing, bool & drawActionArea, float & time, RenderWindow & window)
+void TowerUpdateAndDraw(Entities & entities, Tower *placingTower, bool & towerInstallation, bool & intersectAtPlacing, 
+						bool & drawActionArea, float & time, RenderWindow & window)
 {
-	for (auto it = towers.begin(); it != towers.end();)
+	for (auto it = entities.towers.begin(); it != entities.towers.end();)
 	{
 		Tower *tower = *it;
 		if (tower->isDestroy)
 		{
-			it = towers.erase(it);
+			it = entities.towers.erase(it);
 			delete(tower);
 		}
 		else
@@ -260,11 +283,11 @@ void TowerUpdateAndDraw(list<Tower*> & towers, list<Enemy*> & enemies, list<Bull
 			//Если башня активна, обновляем состояние
 			if (tower->isActive)
 			{
-				if (!enemies.empty())
+				if (!entities.enemies.empty())
 				{
 					float minDistance = 5000;
-					Vector2f nearEnemyPosition = (*enemies.begin())->GetPosition();
-					for (auto enemy = enemies.begin(); enemy != enemies.end(); enemy++)
+					Vector2f nearEnemyPosition = (*entities.enemies.begin())->GetPosition();
+					for (auto enemy = entities.enemies.begin(); enemy != entities.enemies.end(); enemy++)
 					{
 						Vector2f enemyPosition = (*enemy)->GetPosition();
 						if (tower->actionArea.getGlobalBounds().contains(enemyPosition))
@@ -287,16 +310,16 @@ void TowerUpdateAndDraw(list<Tower*> & towers, list<Enemy*> & enemies, list<Bull
 						Bullet *bullet = new Bullet;
 						*bullet = tower->GetBullet();
 						bullet->SetEnemyPos(tower->GetEnemyPos());
-						bullets.push_back(bullet);
+						entities.bullets.push_back(bullet);
 						tower->canShot = false;
 					}
 				}
 			}
 
 			//Препятствие для игрока
-			if (tower->spriteMap.sprite.getGlobalBounds().intersects(player.GetGlobalBounds()))
+			if (tower->spriteMap.sprite.getGlobalBounds().intersects(entities.player.GetGlobalBounds()))
 			{
-				player.SetObstacle(tower->spriteMap.sprite.getGlobalBounds());
+				entities.player.SetObstacle(tower->spriteMap.sprite.getGlobalBounds());
 			}
 
 			//Если ставим новую башню...
@@ -321,32 +344,32 @@ void TowerUpdateAndDraw(list<Tower*> & towers, list<Enemy*> & enemies, list<Bull
 		}
 	}
 }
-void EnemiesUpdateAndDraw(list<Enemy*> & enemies, list<Tower*> & towers, list<Bonus*> & bonuses, UsedBonuses & usedBonuses, Player & player, 
-							list<Coin*> & coins, Coin & coin, RenderWindow & window, float & time)
+void EnemiesUpdateAndDraw(Entities & entities, UsedBonuses & bonuses, Coin & coin, RenderWindow & window, float & time)
 {
-	for (auto itEnemy = enemies.begin(); itEnemy != enemies.end();)
+	for (auto itEnemy = entities.enemies.begin(); itEnemy != entities.enemies.end();)
 	{
 		Enemy *enemy = *itEnemy;
 		Vector2f itPosition = enemy->GetPosition();
 		if (enemy->isDestroy)
 		{
 			//TODO: Звук смерти врага
-			SpawnCoin(coins, coin, enemy->GetCoins(), itPosition);
-			player.AddCoins(enemy->GetCoins());
-			SpawnBonus(bonuses, usedBonuses, itPosition);
-			itEnemy = enemies.erase(itEnemy);
+			SpawnCoin(entities.coins, coin, enemy->GetCoins(), itPosition);
+			entities.player.AddCoins(enemy->GetCoins());
+			SpawnBonus(entities.bonuses, bonuses, itPosition);
+
+			itEnemy = entities.enemies.erase(itEnemy);
 			delete(enemy);
 		}
 		else
 		{
 			float minDistance = 5000;
-			if (!towers.empty())
+			if (!entities.towers.empty())
 			{
 				//Находим близжайшую башню
 				Tower *nearTower = enemy->tower;
-				nearTower = *towers.begin();
+				nearTower = *entities.towers.begin();
 				minDistance = CalculateDistance(enemy->GetPosition(), nearTower->GetPosition());
-				for (auto tower = towers.begin(); tower != towers.end(); tower++)
+				for (auto tower = entities.towers.begin(); tower != entities.towers.end(); tower++)
 				{
 					float distance = CalculateDistance(itPosition, (*tower)->GetPosition());
 					if (distance < minDistance)
@@ -359,14 +382,15 @@ void EnemiesUpdateAndDraw(list<Enemy*> & enemies, list<Tower*> & towers, list<Bo
 				if (enemy->attackingPlayer) enemy->attackingPlayer = false;
 			}
 
-			if (minDistance > CalculateDistance(itPosition, player.GetPosition()) || towers.empty())
+			if (minDistance > CalculateDistance(itPosition, entities.player.GetPosition()) || entities.towers.empty())
 			{
-				enemy->SetTarget(&player);
+				enemy->SetTarget(&entities.player);
 				if (!enemy->attackingPlayer) enemy->attackingPlayer = true;
 			}
 
+			//Проверка столкновения между врагами
 			FloatRect enemyBounds = enemy->damageArea.getGlobalBounds();
-			for (auto it = enemies.begin(); it != enemies.end(); ++it)
+			for (auto it = entities.enemies.begin(); it != entities.enemies.end(); ++it)
 			{
 				if ((*it)->damageArea.getGlobalBounds().intersects(enemyBounds))
 				{
@@ -381,26 +405,28 @@ void EnemiesUpdateAndDraw(list<Enemy*> & enemies, list<Tower*> & towers, list<Bo
 		}
 	}
 }
-void BulletUpdateAndDraw(list<Bullet*> & bullets, list<Enemy*> & enemies, RenderWindow & window, float & time)
+void BulletUpdateAndDraw(Entities & entities, UsedEntities & usedEntities, RenderWindow & window, float & time)
 {
-	for (auto it = bullets.begin(); it != bullets.end();)
+	for (auto it = entities.bullets.begin(); it != entities.bullets.end();)
 	{
 		Bullet *bullet = *it;	
 		bullet->Update(time);
 		Vector2f bulletPosition = bullet->GetPosition();
-		for (auto enemy = enemies.begin(); enemy != enemies.end();)
+		for (auto enemy = entities.enemies.begin(); enemy != entities.enemies.end();)
 		{
 			if ((*enemy)->damageArea.getGlobalBounds().contains(bulletPosition))
 			{
-				(*enemy)->TakeDamage(bullet->GetDamage());
+				float damage = bullet->GetDamage();
+				(*enemy)->TakeDamage(damage);
 				bullet->arrived = true;
+				SpawnChangeHpView(entities.changeHpViews, usedEntities.changeHpView, damage, bulletPosition);
 				break;
 			}
 			enemy++;
 		}
 		if (bullet->arrived)
 		{
-			it = bullets.erase(it);
+			it = entities.bullets.erase(it);
 			delete(bullet);
 		}
 		else
@@ -428,67 +454,67 @@ void CoinsUpdateAndDraw(list<Coin*> & coins, RenderWindow & window, float time)
 		}
 	}
 }
-void IconsUpdateAndDraw(UsedIcons & usedIcons, UsedTowers & usedTowers, Player & player, View & view, RenderWindow & window)
+void IconsUpdateAndDraw(UsedEntities & usedEntities, Entities & entities, View & view, RenderWindow & window)
 {
-	if (usedIcons.icon1.GetActive() && player.GetMoney() < usedTowers.tower1.GetPrice())
+	if (usedEntities.icons.icon1.GetActive() && entities.player.GetMoney() < usedEntities.towers.tower1.GetPrice())
 	{
-		usedIcons.icon1.SetActive(false);
+		usedEntities.icons.icon1.SetActive(false);
 	}
-	else if (!usedIcons.icon1.GetActive() && player.GetMoney() >= usedTowers.tower1.GetPrice())
+	else if (!usedEntities.icons.icon1.GetActive() && entities.player.GetMoney() >= usedEntities.towers.tower1.GetPrice())
 	{
-		usedIcons.icon1.SetActive(true);
-	}
-
-	if (usedIcons.icon2.GetActive() && player.GetMoney() < usedTowers.tower2.GetPrice())
-	{
-		usedIcons.icon2.SetActive(false);
-	}
-	else if (!usedIcons.icon2.GetActive() && player.GetMoney() >= usedTowers.tower2.GetPrice())
-	{
-		usedIcons.icon2.SetActive(true);
+		usedEntities.icons.icon1.SetActive(true);
 	}
 
-	if (usedIcons.icon3.GetActive() && player.GetMoney() < usedTowers.tower3.GetPrice())
+	if (usedEntities.icons.icon2.GetActive() && entities.player.GetMoney() < usedEntities.towers.tower2.GetPrice())
 	{
-		usedIcons.icon3.SetActive(false);
+		usedEntities.icons.icon2.SetActive(false);
 	}
-	else if (!usedIcons.icon3.GetActive() && player.GetMoney() >= usedTowers.tower3.GetPrice())
+	else if (!usedEntities.icons.icon2.GetActive() && entities.player.GetMoney() >= usedEntities.towers.tower2.GetPrice())
 	{
-		usedIcons.icon3.SetActive(true);
+		usedEntities.icons.icon2.SetActive(true);
 	}
 
-	usedIcons.icon1.SetPosition(view.getCenter() + Vector2f(-100, 300));
-	usedIcons.icon1.Draw(window);
-	usedIcons.icon2.SetPosition(view.getCenter() + Vector2f(0, 300));
-	usedIcons.icon2.Draw(window);
-	usedIcons.icon3.SetPosition(view.getCenter() + Vector2f(100, 300));
-	usedIcons.icon3.Draw(window);
+	if (usedEntities.icons.icon3.GetActive() && entities.player.GetMoney() < usedEntities.towers.tower3.GetPrice())
+	{
+		usedEntities.icons.icon3.SetActive(false);
+	}
+	else if (!usedEntities.icons.icon3.GetActive() && entities.player.GetMoney() >= usedEntities.towers.tower3.GetPrice())
+	{
+		usedEntities.icons.icon3.SetActive(true);
+	}
+
+	usedEntities.icons.icon1.SetPosition(view.getCenter() + Vector2f(-100, 300));
+	usedEntities.icons.icon1.Draw(window);
+	usedEntities.icons.icon2.SetPosition(view.getCenter() + Vector2f(0, 300));
+	usedEntities.icons.icon2.Draw(window);
+	usedEntities.icons.icon3.SetPosition(view.getCenter() + Vector2f(100, 300));
+	usedEntities.icons.icon3.Draw(window);
 }
-void PortalUpdateAndDraw(Portal & portal, RenderWindow & window, float time)
+void PortalUpdateAndDraw(Entities & entities, RenderWindow & window, float time)
 {
-	portal.Update(time);
-	portal.Draw(window);
+	entities.portal.Update(time);
+	entities.portal.Draw(window);
 }
 void PlayerUpdateAndDraw(Player & player, RenderWindow & window, float time)
 {
 	player.Update(time);
 	player.Draw(window);
 }
-void BonusesUpdateAndDraw(list<Bonus*> & bonuses, Player & player, RenderWindow & window, float time)
+void BonusesUpdateAndDraw(Entities & entities, RenderWindow & window, float time)
 {
-	for (auto it = bonuses.begin(); it != bonuses.end();)
+	for (auto it = entities.bonuses.begin(); it != entities.bonuses.end();)
 	{
 		Bonus *bonus = *it;
 		if (bonus->isDestroy)
 		{
-			it = bonuses.erase(it);
+			it = entities.bonuses.erase(it);
 			delete(bonus);
 		}
 		else
 		{
-			if (bonus->GetGlobalBound().contains(player.GetPosition()))
+			if (bonus->GetGlobalBound().contains(entities.player.GetPosition()))
 			{
-				player.AddBonus(*bonus);
+				entities.player.AddBonus(*bonus);
 				bonus->isDestroy = true;
 			}
 			bonus->UpdateOnMap(time);
@@ -497,109 +523,123 @@ void BonusesUpdateAndDraw(list<Bonus*> & bonuses, Player & player, RenderWindow 
 		}
 	}
 }
-
-void InitCursors(UsedCursors & usedCursors)
+void ChangeHpViewsUpdateAndDraw(Entities & entities, RenderWindow & window, float time)
 {
-	if (!usedCursors.aimTex.loadFromFile(PATH_TO_TEXTURES + "aim_cursor.png"))
+	for (auto it = entities.changeHpViews.begin(); it != entities.changeHpViews.end();)
+	{
+		ChangeHpView *hp = *it;
+		if (hp->destroy)
+		{
+			it = entities.changeHpViews.erase(it);
+			delete(hp);
+		}
+		else
+		{
+			hp->Update(time);
+			hp->Draw(window);
+			it++;
+		}
+	}
+}
+
+void InitCursors(UsedCursors & cursors)
+{
+	if (!cursors.aimTex.loadFromFile(PATH_TO_TEXTURES + "aim_cursor.png"))
 	{
 		cout << "Сорян, не загрузилась: " << "aim_cursor.png" << endl;
 	}
-	usedCursors.aimCursor.setTexture(usedCursors.aimTex);
-	usedCursors.aimCursor.setOrigin(usedCursors.aimTex.getSize().x / 2.0f, usedCursors.aimTex.getSize().y / 2.0f);
-	usedCursors.aimCursor.setScale(0.15f, 0.24f);
+	cursors.aimCursor.setTexture(cursors.aimTex);
+	cursors.aimCursor.setOrigin(cursors.aimTex.getSize().x / 2.0f, cursors.aimTex.getSize().y / 2.0f);
+	cursors.aimCursor.setScale(0.15f, 0.24f);
 
-	if (!usedCursors.handTex.loadFromFile(PATH_TO_TEXTURES + "hand_cursor.png"))
+	if (!cursors.handTex.loadFromFile(PATH_TO_TEXTURES + "hand_cursor.png"))
 	{
 		cout << "Сорян, не загрузилась: " << "hand_cursor.png" << endl;
 	}
-	usedCursors.handCursor.setTexture(usedCursors.handTex);
-	usedCursors.handCursor.setOrigin(usedCursors.handTex.getSize().x / 2.0f, usedCursors.handTex.getSize().y / 2.0f);
-	usedCursors.handCursor.setScale(0.5, 0.5);
+	cursors.handCursor.setTexture(cursors.handTex);
+	cursors.handCursor.setOrigin(cursors.handTex.getSize().x / 2.0f, cursors.handTex.getSize().y / 2.0f);
+	cursors.handCursor.setScale(0.5, 0.5);
 }
-void InitTowers(UsedTowers & usedTowers, Textures & textures)
+void InitTowers(UsedTowers & towers, Textures & textures)
 {
 	textures.tower1.loadFromFile(PATH_TO_TEXTURES + "towers/gun_turret.png");
+	towers.tower1.SetSpriteMap(textures.tower1, 2, 64);
+	towers.tower1.SetMaxHp(300);
+	towers.tower1.SetBullet("bullet", 1.0f, 0.5f);
+	towers.tower1.SetReloadTime(200);
+	towers.tower1.SetActionRadius(150);
+	towers.tower1.SetPrice(50);
+
 	textures.tower2.loadFromFile(PATH_TO_TEXTURES + "towers/twin_gun_turret.png");
+	towers.tower2.SetSpriteMap(textures.tower2, 8, 8);
+	towers.tower2.SetMaxHp(200);
+	towers.tower2.SetBullet("twin_bullet", 2.0f, 0.5f);
+	towers.tower2.bullet.bulletSprite.setScale(Vector2f(1.1f, 1.1f));
+	towers.tower2.SetReloadTime(200);
+	towers.tower2.SetActionRadius(200);
+	towers.tower2.SetPrice(100);
+
 	textures.tower3.loadFromFile(PATH_TO_TEXTURES + "towers/laser_turret.png");
-	usedTowers.tower1.SetSpriteMap(textures.tower1, 2, 64);
-	usedTowers.tower2.SetSpriteMap(textures.tower2, 8, 8);
-	usedTowers.tower3.SetSpriteMap(textures.tower3, 8, 8);
-
-	usedTowers.tower1.SetMaxHp(300);
-	usedTowers.tower2.SetMaxHp(200);
-	usedTowers.tower3.SetMaxHp(100);
-
-	usedTowers.tower1.SetBullet("bullet", 0.5f, 0.5f);
-	usedTowers.tower2.SetBullet("twin_bullet", 1, 0.5f);
-	usedTowers.tower3.SetBullet("laser_bullet", 5, 2.f);
-
-	usedTowers.tower2.bullet.bulletSprite.setScale(Vector2f(1.1f, 1.1f));
-	usedTowers.tower3.bullet.bulletSprite.setScale(Vector2f(1.1f, 1.1f));
-
-	usedTowers.tower1.SetReloadTime(200);
-	usedTowers.tower2.SetReloadTime(200);
-	usedTowers.tower3.SetReloadTime(1000);
-
-	usedTowers.tower1.SetActionRadius(150);
-	usedTowers.tower2.SetActionRadius(200);
-	usedTowers.tower3.SetActionRadius(300);
-
-	usedTowers.tower1.SetPrice(50);
-	usedTowers.tower2.SetPrice(100);
-	usedTowers.tower3.SetPrice(300);
+	towers.tower3.SetSpriteMap(textures.tower3, 8, 8);
+	towers.tower3.SetMaxHp(100);
+	towers.tower3.SetBullet("laser_bullet", 10, 2.f);
+	towers.tower3.bullet.bulletSprite.setScale(Vector2f(1.1f, 1.1f));
+	towers.tower3.SetReloadTime(1000);
+	towers.tower3.SetActionRadius(300);
+	towers.tower3.SetPrice(300);
 }
-void InitIcons(UsedIcons & usedIcons)
+void InitIcons(UsedIcons & icons)
 {
-	usedIcons.icon1.SetSprite("gun_turret_icon");
-	usedIcons.icon2.SetSprite("twin_gun_turret_icon");
-	usedIcons.icon3.SetSprite("laser_turret_icon");
+	icons.icon1.SetSprite("gun_turret_icon");
+	icons.icon2.SetSprite("twin_gun_turret_icon");
+	icons.icon3.SetSprite("laser_turret_icon");
 
-	usedIcons.icon1.SetPosition(540, 650);
-	usedIcons.icon2.SetPosition(640, 650);
-	usedIcons.icon3.SetPosition(740, 650);
+	icons.icon1.SetPosition(540, 650);
+	icons.icon2.SetPosition(640, 650);
+	icons.icon3.SetPosition(740, 650);
 }
-void InitEnemies(UsedEnemies & usedEnemies, Textures & textures)
+void InitEnemies(UsedEnemies & enemies, Textures & textures)
 {
 	textures.enemie1.texRun.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy1_run.png");
 	textures.enemie1.texAttack.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy1_attack.png");
 
-	usedEnemies.enemy1.SetTextureRun(textures.enemie1.texRun, 16, 16);
-	usedEnemies.enemy1.SetTextureAttack(textures.enemie1.texAttack, 11, 16);
-	usedEnemies.enemy1.SetPosition(800, 800);
-	usedEnemies.enemy1.SetMaxHp(50);
-	usedEnemies.enemy1.SetSpeed(0.2f);
-	usedEnemies.enemy1.SetDamage(3);
-	usedEnemies.enemy1.SetCoins(10);
-	usedEnemies.enemy1.SetSpeedAttackAnimation(0.01f);
-	usedEnemies.enemy1.SetSpeedRunAnimation(0.04f);
+	enemies.enemy1.SetTextureRun(textures.enemie1.texRun, 16, 16);
+	enemies.enemy1.SetTextureAttack(textures.enemie1.texAttack, 11, 16);
+	enemies.enemy1.SetPosition(800, 800);
+	enemies.enemy1.SetMaxHp(35);
+	enemies.enemy1.SetSpeed(0.2f);
+	enemies.enemy1.SetDamage(3);
+	enemies.enemy1.SetCoins(10);
+	enemies.enemy1.SetSpeedAttackAnimation(0.01f);
+	enemies.enemy1.SetSpeedRunAnimation(0.04f);
 
 	textures.enemie2.texRun.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy2_run.png");
 	textures.enemie2.texAttack.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy2_attack.png");
 
-	usedEnemies.enemy2.SetTextureRun(textures.enemie2.texRun, 24, 16);
-	usedEnemies.enemy2.SetTextureAttack(textures.enemie2.texAttack, 22, 16);
-	usedEnemies.enemy2.SetPosition(800, 800);
-	usedEnemies.enemy2.SetMaxHp(100);
-	usedEnemies.enemy2.SetSpeed(0.12f);
-	usedEnemies.enemy2.SetDamage(5);
-	usedEnemies.enemy2.SetCoins(25);
-	usedEnemies.enemy2.SetSpeedAttackAnimation(0.01f);
-	usedEnemies.enemy2.SetSpeedRunAnimation(0.04f);
+	enemies.enemy2.SetTextureRun(textures.enemie2.texRun, 24, 16);
+	enemies.enemy2.SetTextureAttack(textures.enemie2.texAttack, 22, 16);
+	enemies.enemy2.SetPosition(800, 800);
+	enemies.enemy2.SetMaxHp(100);
+	enemies.enemy2.SetSpeed(0.12f);
+	enemies.enemy2.SetDamage(5);
+	enemies.enemy2.SetCoins(25);
+	enemies.enemy2.SetSpeedAttackAnimation(0.01f);
+	enemies.enemy2.SetSpeedRunAnimation(0.04f);
 
 	textures.enemie3.texRun.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy3_run.png");
 	textures.enemie3.texAttack.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy3_attack.png");
 
-	usedEnemies.enemy3.SetTextureRun(textures.enemie3.texRun, 30, 9);
-	usedEnemies.enemy3.SetTextureAttack(textures.enemie3.texAttack, 15, 9);
-	usedEnemies.enemy3.SetPosition(800, 800);
-	usedEnemies.enemy3.SetMaxHp(300);
-	usedEnemies.enemy3.SetBossAnim(true);
-	usedEnemies.enemy3.SetSpeed(0.1f);
-	usedEnemies.enemy3.SetDamage(10);
-	usedEnemies.enemy3.SetCoins(100);
-	usedEnemies.enemy3.SetSpeedAttackAnimation(0.01f);
-	usedEnemies.enemy3.SetSpeedRunAnimation(0.03f);
-	usedEnemies.enemy3.SetScale(1.2f, 1.2f);
+	enemies.enemy3.SetTextureRun(textures.enemie3.texRun, 30, 9);
+	enemies.enemy3.SetTextureAttack(textures.enemie3.texAttack, 15, 9);
+	enemies.enemy3.SetPosition(800, 800);
+	enemies.enemy3.SetMaxHp(300);
+	enemies.enemy3.SetBossAnim(true);
+	enemies.enemy3.SetSpeed(0.1f);
+	enemies.enemy3.SetDamage(10);
+	enemies.enemy3.SetCoins(100);
+	enemies.enemy3.SetSpeedAttackAnimation(0.01f);
+	enemies.enemy3.SetSpeedRunAnimation(0.03f);
+	enemies.enemy3.SetScale(1.2f, 1.2f);
 }
 void InitPlayer(Player & player, Textures & textures)
 {
@@ -636,6 +676,10 @@ void InitCoin(Coin & coin, Textures & textures, Font font)
 	coin.SetSpriteMap(textures.coin, 10, 1);
 	coin.SetFont(font);
 }
+void InitChangeHpView(ChangeHpView & changeHpView, Font font)
+{
+	changeHpView.SetFont(font);
+}
 void InitMap(Sprite & map, Textures & textures)
 {
 	textures.map.loadFromFile(PATH_TO_TEXTURES + "map/map.png");
@@ -653,21 +697,21 @@ void InitObstacles(Obstacles & obstacles)
 	obstacles.rightObstacle.setPosition(2018, 74);
 	obstacles.rightObstacle.setSize(Vector2f(95, 1920));
 }
-void InitBonuses(UsedBonuses & usedBonuses, Textures & textures)
+void InitBonuses(UsedBonuses & bonuses, Textures & textures)
 {
 	textures.bonuses.damageIncTex.loadFromFile(PATH_TO_TEXTURES + "bonuses/damage_increase.png");
 	textures.bonuses.healthIncTex.loadFromFile(PATH_TO_TEXTURES + "bonuses/health_increase.png");
 	textures.bonuses.speedIncTex.loadFromFile(PATH_TO_TEXTURES + "bonuses/speed_increase.png");
 	textures.bonuses.fireAccelTex.loadFromFile(PATH_TO_TEXTURES + "bonuses/fire_acceleration.png");
 
-	usedBonuses.damageIncrease.SetBonus("damageInc", textures.bonuses.damageIncTex, 15, 8000, 10000);
-	usedBonuses.healthIncrease.SetBonus("healthInc", textures.bonuses.healthIncTex, 20, 8000);
-	usedBonuses.speedIncrease.SetBonus("speedInc", textures.bonuses.speedIncTex, 0.1, 8000, 10000);
-	usedBonuses.fireAcceleration.SetBonus("fireAccel", textures.bonuses.fireAccelTex, 50, 8000, 10000);
-	usedBonuses.damageIncrease.SetScale(0.5f, 0.5f);
-	usedBonuses.healthIncrease.SetScale(0.5f, 0.5f);
-	usedBonuses.speedIncrease.SetScale(0.5f, 0.5f);
-	usedBonuses.fireAcceleration.SetScale(0.5f, 0.5f);
+	bonuses.damageIncrease.SetBonus("damageInc", textures.bonuses.damageIncTex, 15, 8000, 10000);
+	bonuses.healthIncrease.SetBonus("healthInc", textures.bonuses.healthIncTex, 20, 8000);
+	bonuses.speedIncrease.SetBonus("speedInc", textures.bonuses.speedIncTex, 0.1, 8000, 10000);
+	bonuses.fireAcceleration.SetBonus("fireAccel", textures.bonuses.fireAccelTex, 50, 8000, 10000);
+	bonuses.damageIncrease.SetScale(0.5f, 0.5f);
+	bonuses.healthIncrease.SetScale(0.5f, 0.5f);
+	bonuses.speedIncrease.SetScale(0.5f, 0.5f);
+	bonuses.fireAcceleration.SetScale(0.5f, 0.5f);
 }
 
 int main()
@@ -676,40 +720,30 @@ int main()
 	View view;
 	view.reset(FloatRect(0, 0, 1280, 720));
 
-	Font fontForMoney;
-	fontForMoney.loadFromFile(PATH_TO_FONTS + "for_money.ttf");
-	Text playerMoneyText("", fontForMoney, 20);
+	Font font;
+	font.loadFromFile(PATH_TO_FONTS + "font1.ttf");
+	Text playerMoneyText("", font, 20);
 	playerMoneyText.setStyle(Text::Bold);
 
+	UsedEntities usedEntities;
 	Textures textures;
+	Entities entities;
 
-	Player player;
-	UsedTowers usedTowers;
-	UsedIcons usedIcons;
-	UsedEnemies usedEnemies;
-	UsedCursors usedCursors;
 	AreasPlacingTower areasPlacingTower;
-	Portal portal;
-	Obstacles obstacles;
-	UsedBonuses usedBonuses;
+
 	Coin coin;
 	
-	InitPlayer(player, textures);
-	InitTowers(usedTowers, textures);
-	InitIcons(usedIcons);
-	InitEnemies(usedEnemies, textures);
-	InitCursors(usedCursors);
+	InitPlayer(entities.player, textures);
+	InitTowers(usedEntities.towers, textures);
+	InitIcons(usedEntities.icons);
+	InitEnemies(usedEntities.enemies, textures);
+	InitCursors(usedEntities.cursors);
 	InitAreasPlacingTower(areasPlacingTower);
-	InitPortal(portal, textures);
-	InitObstacles(obstacles);
-	InitBonuses(usedBonuses, textures);
-	InitCoin(coin, textures, fontForMoney);
-
-	list<Tower*> towers;
-	list<Enemy*> enemies;
-	list<Bullet*> bullets;
-	list<Coin*> coins;
-	list<Bonus*> bonuses;
+	InitPortal(entities.portal, textures);
+	InitObstacles(entities.obstacles);
+	InitBonuses(usedEntities.bonuses, textures);
+	InitCoin(coin, textures, font);
+	InitChangeHpView(usedEntities.changeHpView, font);
 
 	Tower *placingTower = new Tower;
 
@@ -729,15 +763,15 @@ int main()
 		Enemy *newEnemy = new Enemy;
 		if (mapUsedEnemies[i] == 1)
 		{
-			*newEnemy = usedEnemies.enemy1;
+			*newEnemy = usedEntities.enemies.enemy1;
 		}
 		else if (mapUsedEnemies[i] == 2)
 		{
-			*newEnemy = usedEnemies.enemy2;
+			*newEnemy = usedEntities.enemies.enemy2;
 		}
 		else if (mapUsedEnemies[i] == 3)
 		{
-			*newEnemy = usedEnemies.enemy3;
+			*newEnemy = usedEntities.enemies.enemy3;
 		}
 		enemiesInLevel.push_back(newEnemy);
 	}
@@ -764,7 +798,7 @@ int main()
 		Vector2i pixelPos = Mouse::getPosition(window);
 		Vector2f mousePos = window.mapPixelToCoords(pixelPos);
 
-		player.isMove = false;
+		entities.player.isMove = false;
 		while (window.pollEvent(event))
 		{
 			if (event.type == Event::Closed)
@@ -774,29 +808,25 @@ int main()
 			{
 				if (event.key.code == Keyboard::Num1 || event.key.code == Keyboard::Num2 || event.key.code == Keyboard::Num3)
 				{
-					if (event.key.code == Keyboard::Num1 && player.GetMoney() >= usedTowers.tower1.GetPrice())
+					if (event.key.code == Keyboard::Num1 && entities.player.GetMoney() >= usedEntities.towers.tower1.GetPrice())
 					{
 						if (!towerInstallation) placingTower = new Tower;
-						*placingTower = usedTowers.tower1;
+						*placingTower = usedEntities.towers.tower1;
 						towerInstallation = true;
 					}
-					if (event.key.code == Keyboard::Num2 && player.GetMoney() >= usedTowers.tower2.GetPrice())
+					if (event.key.code == Keyboard::Num2 && entities.player.GetMoney() >= usedEntities.towers.tower2.GetPrice())
 					{
 						if (!towerInstallation) placingTower = new Tower;
-						*placingTower = usedTowers.tower2;
+						*placingTower = usedEntities.towers.tower2;
 						towerInstallation = true;
 					}
-					if (event.key.code == Keyboard::Num3 && player.GetMoney() >= usedTowers.tower3.GetPrice())
+					if (event.key.code == Keyboard::Num3 && entities.player.GetMoney() >= usedEntities.towers.tower3.GetPrice())
 					{
 						if (!towerInstallation) placingTower = new Tower;
-						*placingTower = usedTowers.tower3;
+						*placingTower = usedEntities.towers.tower3;
 						towerInstallation = true;
 					}
 					
-				}
-				if (event.key.code == Keyboard::Space)
-				{
-					//SpawnEnemy(enemies, usedEnemies, player);
 				}
 				if (event.key.code == Keyboard::R)
 				{
@@ -830,7 +860,7 @@ int main()
 
 			if (iterEnemy != enemiesInLevel.end())
 			{
-				enemies.push_back(*iterEnemy);
+				entities.enemies.push_back(*iterEnemy);
 				iterEnemy++;
 			}
 			difLevel++;
@@ -841,15 +871,16 @@ int main()
 
 		window.draw(mapSprite);		
 	
-		PortalUpdateAndDraw(portal, window, time);
-		TowerUpdateAndDraw(towers, enemies, bullets, player, placingTower, towerInstallation, intersectAtPlacing, drawActionArea, time, window);
-		BulletUpdateAndDraw(bullets, enemies, window, time);		
-		EnemiesUpdateAndDraw(enemies, towers, bonuses, usedBonuses, player, coins, coin, window, time);
-		BonusesUpdateAndDraw(bonuses, player, window, time);
+		PortalUpdateAndDraw(entities, window, time);
+		TowerUpdateAndDraw(entities, placingTower, towerInstallation, intersectAtPlacing, drawActionArea, time, window);
+		BulletUpdateAndDraw(entities, usedEntities, window, time);
+		EnemiesUpdateAndDraw(entities, usedEntities.bonuses, coin, window, time);
+		BonusesUpdateAndDraw(entities, window, time);
+		ChangeHpViewsUpdateAndDraw(entities, window, time);
 
-		if (Mouse::isButtonPressed(Mouse::Left) && !towerInstallation && player.canShot)
+		if (Mouse::isButtonPressed(Mouse::Left) && !towerInstallation && entities.player.canShot)
 		{
-			PlayerShot(player, bullets, mousePos);
+			PlayerShot(entities, mousePos);
 		}
 
 		//Установка башни
@@ -865,9 +896,9 @@ int main()
 					towerInstallation = false;
 					placingTower->isActive = true;
 					placingTower->spriteMap.sprite.setColor(Color::White);
-					towers.push_back(placingTower);
-					player.SubCoins(placingTower->GetPrice());
-					player.canShot = false;
+					entities.towers.push_back(placingTower);
+					entities.player.SubCoins(placingTower->GetPrice());
+					entities.player.canShot = false;
 				}
 			}
 			else
@@ -875,46 +906,46 @@ int main()
 				placingTower->spriteMap.sprite.setColor(Color::Red);
 			}
 			placingTower->Update(time);
-			areasPlacingTower.placingArea.setPosition(player.GetPosition());
-			areasPlacingTower.notPlacingArea.setPosition(player.GetPosition());
+			areasPlacingTower.placingArea.setPosition(entities.player.GetPosition());
+			areasPlacingTower.notPlacingArea.setPosition(entities.player.GetPosition());
 			window.draw(areasPlacingTower.placingArea);
 			window.draw(areasPlacingTower.notPlacingArea);
 			window.draw(placingTower->spriteMap.sprite);
 		}
 
-		CheckObstacles(obstacles, player);
-		PlayerUpdateAndDraw(player, window, time);
+		CheckObstacles(entities.obstacles, entities.player);
+		PlayerUpdateAndDraw(entities.player, window, time);
 
-		CoinsUpdateAndDraw(coins, window, time);
+		CoinsUpdateAndDraw(entities.coins, window, time);
 
-		if (player.GetPosition().x < 640 || player.GetPosition().x > 1472 || player.GetPosition().y < 360 || player.GetPosition().y > 1752)
+		if (entities.player.GetPosition().x < 640 || entities.player.GetPosition().x > 1472 || entities.player.GetPosition().y < 360 || entities.player.GetPosition().y > 1752)
 		{
-			float tempX = player.GetPosition().x;
-			float tempY = player.GetPosition().y;
-			if (player.GetPosition().x < 640) tempX = 640;
-			if (player.GetPosition().x > 1472) tempX = 1472;
-			if (player.GetPosition().y < 360) tempY = 360;
-			if (player.GetPosition().y > 1752) tempY = 1752;
+			float tempX = entities.player.GetPosition().x;
+			float tempY = entities.player.GetPosition().y;
+			if (entities.player.GetPosition().x < 640) tempX = 640;
+			if (entities.player.GetPosition().x > 1472) tempX = 1472;
+			if (entities.player.GetPosition().y < 360) tempY = 360;
+			if (entities.player.GetPosition().y > 1752) tempY = 1752;
 			view.setCenter(tempX, tempY);
 		}
-		else view.setCenter(player.GetPosition());
+		else view.setCenter(entities.player.GetPosition());
 		window.setView(view);
 
 		if (towerInstallation)
 		{
-			usedCursors.handCursor.setPosition(mousePos);
-			window.draw(usedCursors.handCursor);
+			usedEntities.cursors.handCursor.setPosition(mousePos);
+			window.draw(usedEntities.cursors.handCursor);
 		}
 		else
 		{
-			usedCursors.aimCursor.setPosition(mousePos);
-			window.draw(usedCursors.aimCursor);
+			usedEntities.cursors.aimCursor.setPosition(mousePos);
+			window.draw(usedEntities.cursors.aimCursor);
 		}
 
-		IconsUpdateAndDraw(usedIcons, usedTowers, player, view, window);
+		IconsUpdateAndDraw(usedEntities, entities, view, window);
 
 		ostringstream playerMoneyString;
-		playerMoneyString << player.GetMoney();
+		playerMoneyString << entities.player.GetMoney();
 		playerMoneyText.setString("Money: " + playerMoneyString.str());
 		playerMoneyText.setPosition(view.getCenter() + Vector2f(-540, 260));
 		window.draw(playerMoneyText);
