@@ -10,12 +10,18 @@ public:
 	bool destroy = false;
 
 	Coin() = default;
-	Coin(string nameTex, int numColumns, int numLines)
+	Coin(Texture & texture, int numColumns, int numLines)
 	{
-		spriteMap.SetSpriteMap(nameTex, numColumns, numLines);
+		spriteMap.SetSpriteMap(texture, numColumns, numLines);
 		spriteMap.sprite.setScale(0.3f, 0.3f);
 	}
 	~Coin() = default;
+
+	void SetSpriteMap(Texture & texture, int numColumns, int numLines)
+	{
+		spriteMap.SetSpriteMap(texture, numColumns, numLines);
+		spriteMap.sprite.setScale(0.3f, 0.3f);
+	}
 
 	void SetValue(int value_)
 	{
@@ -42,11 +48,11 @@ public:
 		if (timerToDisappearance > 0)
 		{
 			timerToDisappearance -= time;
-			currFrame += 0.04 * time;
+			currFrame += 0.04f * time;
 			if (currFrame > spriteMap.GetColumns()) currFrame = 0;
-			spriteMap.SetFrame(currFrame);
-			position = Vector2f(position.x, position.y - 0.04 * time);
-			currAlpha -= 0.04 * time;
+			spriteMap.SetFrame((int)currFrame);
+			position = Vector2f(position.x, position.y - 0.04f * time);
+			currAlpha -= byte(0.04 * time);
 			if (currAlpha < 0) currAlpha = 0;
 			spriteMap.sprite.setColor(Color(255, 255, 255, currAlpha));
 			text.setColor(Color(255, 255, 255, currAlpha));

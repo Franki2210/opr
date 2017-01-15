@@ -8,39 +8,22 @@ public:
 	~SpriteMap() = default;
 
 	Sprite sprite;
-	SpriteMap(string nameTexture, int column, int line)
+	SpriteMap(Texture & texture, int column, int line)
 		: columns(column),
 		lines(line)
 	{
-		if (!texture.loadFromFile(PATH_TO_TEXTURES + nameTexture + ".png"))
-		{
-			cout << "Сорян, не загрузилась: " << nameTexture << endl;
-		}
 		sprite.setTexture(texture);
 		GetTileSize();
 		sprite.setTextureRect(IntRect(0, 0, (int)tileSize.x, (int)tileSize.y));
 		sprite.setOrigin(sprite.getLocalBounds().width / 2, sprite.getLocalBounds().height / 2);
 	}
 
-	void SetSpriteMap(string nameTexture, int columnsInMap, int linesInMap)
+	void SetSpriteMap(Texture & texture, int columnsInMap, int linesInMap)
 	{
-		if (!texture.loadFromFile(PATH_TO_TEXTURES + nameTexture + ".png"))
-		{
-			cout << "Сорян, не загрузилась: " << nameTexture << endl;
-		}
-		columns = columnsInMap;
-		lines = linesInMap;
 		sprite.setTexture(texture);
-		GetTileSize();
-		sprite.setTextureRect(IntRect(0, 0, (int)tileSize.x, (int)tileSize.y));
-		sprite.setOrigin(sprite.getLocalBounds().width / 2, sprite.getLocalBounds().height / 2);
-	}
-	void SetSpriteMap(Texture & texture_, int columnsInMap, int linesInMap)
-	{
-		sprite.setTexture(texture_);
 		columns = columnsInMap;
 		lines = linesInMap;
-		GetTileSize();
+		GetTileSize(texture);
 		sprite.setTextureRect(IntRect(0, 0, (int)tileSize.x, (int)tileSize.y));
 		sprite.setOrigin(sprite.getLocalBounds().width / 2, sprite.getLocalBounds().height / 2);
 	}
@@ -85,12 +68,16 @@ public:
 		return lines;
 	}
 
-	Vector2i GetTileSize()
+	Vector2i GetTileSize(Texture & texture)
 	{
 		if (tileSize == Vector2i(0, 0))
 		{
 			tileSize = Vector2i(texture.getSize().x / columns, texture.getSize().y / lines);
 		}
+		return tileSize;
+	}
+	Vector2i GetTileSize()
+	{
 		return tileSize;
 	}
 
@@ -104,7 +91,6 @@ public:
 	}
 
 private:
-	Texture texture;
 	Vector2i tileSize = { 0, 0 };
 
 	int columns;

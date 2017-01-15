@@ -9,9 +9,9 @@ public:
 	Portal() = default;
 	~Portal() = default;
 
-	void SetSpriteMap(string nameTexture, int numColumns, int numLines)
+	void SetSpriteMap(Texture & texture, int numColumns, int numLines)
 	{
-		spriteMap.SetSpriteMap(nameTexture, numColumns, numLines);
+		spriteMap.SetSpriteMap(texture, numColumns, numLines);
 	}
 
 	void SetPosition(float x, float y)
@@ -25,9 +25,9 @@ public:
 
 	void Update(float time)
 	{
-		currFrame += 0.01 * time;
+		currFrame += 0.01f * time;
 		if (currFrame > spriteMap.GetColumns()) currFrame = 0;
-		spriteMap.SetFrame(currFrame);
+		spriteMap.SetFrame((int)currFrame);
 	}
 
 	void Draw(RenderWindow & window)

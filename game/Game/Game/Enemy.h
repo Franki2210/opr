@@ -13,16 +13,15 @@ public:
 	SpriteMap spriteMapAttack;
 	CircleShape damageArea;
 
-	Tower *tower;
-	Player *player;
-
+	Tower *tower = nullptr;
+	Player *player = nullptr;
 	bool attackingPlayer = false;
 	bool isActive = true;
 
 	Enemy() = default;
-	Enemy(string nameTexture, int columnInMap, int lineInMap)
+	Enemy(Texture texture, int columnInMap, int lineInMap)
 	{
-		spriteMapRun.SetSpriteMap(nameTexture, columnInMap, lineInMap);
+		spriteMapRun.SetSpriteMap(texture, columnInMap, lineInMap);
 		damageArea.setRadius(25);
 		damageArea.setFillColor(Color::Red);
 		damageArea.setOrigin(damageArea.getRadius(), damageArea.getRadius());
@@ -31,20 +30,6 @@ public:
 	~Enemy() = default;
 
 	//“екстурки движени€ и атаки
-	void SetTextureRun(string nameTexture, int columnInMap, int lineInMap)
-	{
-		spriteMapRun.SetSpriteMap(nameTexture, columnInMap, lineInMap);
-		damageArea.setRadius(25);
-		damageArea.setFillColor(Color::Red);
-		damageArea.setOrigin(damageArea.getRadius(), damageArea.getRadius());
-		spriteMapRun.sprite.setScale(Vector2f(0.6f, 0.6f));
-	}
-	void SetTextureAttack(string nameTexture, int columnInMap, int lineInMap)
-	{
-		spriteMapAttack.SetSpriteMap(nameTexture, columnInMap, lineInMap);
-		spriteMapAttack.sprite.setScale(Vector2f(0.6f, 0.6f));
-		spriteMapAttack.sprite.setOrigin(spriteMapAttack.sprite.getLocalBounds().width / 3, spriteMapAttack.sprite.getLocalBounds().height / 2);
-	}
 	void SetTextureRun(Texture & texture, int columnInMap, int lineInMap)
 	{
 		spriteMapRun.SetSpriteMap(texture, columnInMap, lineInMap);
@@ -161,7 +146,7 @@ public:
 			}
 
 			//¬ зависимости от угла выбираем линию в карте спрайта (направление)
-			lineInSpriteMap = angle / 22.5f;
+			lineInSpriteMap = int(angle / 22.5);
 			if (isBossAnim)
 			{
 				if (lineInSpriteMap > spriteMapRun.GetLines() - 2)

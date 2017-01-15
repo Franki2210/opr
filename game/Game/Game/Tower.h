@@ -36,9 +36,9 @@ public:
 		boundsArea.setFillColor(boundsAreaColor);
 	}
 	~Tower() = default;
-	Tower(string nameTowerTexture, int column, int line)
+	Tower(Texture & texture, int column, int line)
 	{
-		spriteMap.SetSpriteMap(nameTowerTexture, column, line);
+		spriteMap.SetSpriteMap(texture, column, line);
 		actionArea.setRadius(400);
 		Color actionAreaColor(100, 200, 100, 20);
 		Color actionAreaBorderColor(100, 200, 100, 100);
@@ -54,9 +54,9 @@ public:
 		boundsArea.setFillColor(boundsAreaColor);
 	}
 
-	void SetSpriteMap(string nameTowerTexture, int column, int line)
+	void SetSpriteMap(Texture & texture, int column, int line)
 	{
-		spriteMap.SetSpriteMap(nameTowerTexture, column, line);
+		spriteMap.SetSpriteMap(texture, column, line);
 	}
 
 	void SetActionRadius(float radius)

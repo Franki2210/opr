@@ -10,19 +10,19 @@ public:
 	bool canShot = false;
 
 	Player() = default;
-	Player(string texFileIdle, int colIdle, int lineIdle,
-		string texFileRun, int colRun, int lineRun)
+	Player(Texture texIdle, int colIdle, int lineIdle,
+		Texture texRun, int colRun, int lineRun)
 	{
-		spriteMapIdle.SetSpriteMap(texFileIdle, colIdle, lineIdle);
-		spriteMapRun.SetSpriteMap(texFileRun, colRun, lineRun);
+		spriteMapIdle.SetSpriteMap(texIdle, colIdle, lineIdle);
+		spriteMapRun.SetSpriteMap(texRun, colRun, lineRun);
 	}
 	~Player() = default;
 
-	void SetSpriteMaps(string texFileIdle, int colIdle, int lineIdle,
-		string texFileRun, int colRun, int lineRun)
+	void SetSpriteMaps(Texture & texIdle, int colIdle, int lineIdle,
+		Texture & texRun, int colRun, int lineRun)
 	{
-		spriteMapIdle.SetSpriteMap(texFileIdle, colIdle, lineIdle);
-		spriteMapRun.SetSpriteMap(texFileRun, colRun, lineRun);
+		spriteMapIdle.SetSpriteMap(texIdle, colIdle, lineIdle);
+		spriteMapRun.SetSpriteMap(texRun, colRun, lineRun);
 	}
 
 	//Препятствие для игрока
@@ -67,6 +67,7 @@ public:
 		{
 			return Direction::Left;
 		}
+		else return Direction::Up;
 	}
 	Vector2f MoveFromDirection(float const &time)
 	{

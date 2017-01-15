@@ -111,6 +111,32 @@ struct UsedPortal
 	SpriteMap spriteMap;
 };
 
+struct TexturesEnemies
+{
+	Texture texRun;
+	Texture texAttack;
+};
+struct TexturesPlayer
+{
+	Texture idle;
+	Texture run;
+};
+
+struct Textures
+{
+	TexturesEnemies enemie1;
+	TexturesEnemies enemie2;
+	TexturesEnemies enemie3;
+	TexturesPlayer player;
+	Texture tower1;
+	Texture tower2;
+	Texture tower3;
+	Texture coin;
+	Texture portal;
+	Texture map;
+
+};
+
 void SpawnCoin(list<Coin*> & coins, Coin & coin, int value, Vector2f position)
 {
 	Coin *newCoin = new Coin;
@@ -355,22 +381,25 @@ void InitCursors(UsedCursors & usedCursors)
 		cout << "Сорян, не загрузилась: " << "aim_cursor.png" << endl;
 	}
 	usedCursors.aimCursor.setTexture(usedCursors.aimTex);
-	usedCursors.aimCursor.setOrigin(usedCursors.aimTex.getSize().x / 2, usedCursors.aimTex.getSize().y / 2);
-	usedCursors.aimCursor.setScale(0.15, 0.24);
+	usedCursors.aimCursor.setOrigin(usedCursors.aimTex.getSize().x / 2.0f, usedCursors.aimTex.getSize().y / 2.0f);
+	usedCursors.aimCursor.setScale(0.15f, 0.24f);
 
 	if (!usedCursors.handTex.loadFromFile(PATH_TO_TEXTURES + "hand_cursor.png"))
 	{
 		cout << "Сорян, не загрузилась: " << "hand_cursor.png" << endl;
 	}
 	usedCursors.handCursor.setTexture(usedCursors.handTex);
-	usedCursors.handCursor.setOrigin(usedCursors.handTex.getSize().x / 2, usedCursors.handTex.getSize().y / 2);
+	usedCursors.handCursor.setOrigin(usedCursors.handTex.getSize().x / 2.0f, usedCursors.handTex.getSize().y / 2.0f);
 	usedCursors.handCursor.setScale(0.5, 0.5);
 }
-void InitTowers(UsedTowers & usedTowers)
+void InitTowers(UsedTowers & usedTowers, Textures & textures)
 {
-	usedTowers.tower1.SetSpriteMap("towers/gun_turret", 2, 64);
-	usedTowers.tower2.SetSpriteMap("towers/twin_gun_turret", 8, 8);
-	usedTowers.tower3.SetSpriteMap("towers/laser_turret", 8, 8);
+	textures.tower1.loadFromFile(PATH_TO_TEXTURES + "towers/gun_turret.png");
+	textures.tower2.loadFromFile(PATH_TO_TEXTURES + "towers/twin_gun_turret.png");
+	textures.tower3.loadFromFile(PATH_TO_TEXTURES + "towers/laser_turret.png");
+	usedTowers.tower1.SetSpriteMap(textures.tower1, 2, 64);
+	usedTowers.tower2.SetSpriteMap(textures.tower2, 8, 8);
+	usedTowers.tower3.SetSpriteMap(textures.tower3, 8, 8);
 
 	usedTowers.tower1.SetMaxHp(300);
 	usedTowers.tower2.SetMaxHp(200);
@@ -405,17 +434,14 @@ void InitIcons(UsedIcons & usedIcons)
 	usedIcons.icon2.SetPosition(640, 650);
 	usedIcons.icon3.SetPosition(740, 650);
 }
-void InitEnemies(UsedEnemies & usedEnemies)
+void InitEnemies(UsedEnemies & usedEnemies, Textures & textures)
 {
-	/*Texture texRun;
-	texRun.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy1_run.png");
-	Texture texAttack;
-	texAttack.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy1_attack.png");
+	textures.enemie1.texRun.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy1_run.png");
+	textures.enemie1.texAttack.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy1_attack.png");
 
-	usedEnemies.enemy1.SetTextureRun(texRun, 16, 16);
-	usedEnemies.enemy1.SetTextureAttack(texAttack, 11, 16);*/
-	usedEnemies.enemy1.SetTextureRun("enemies/enemy1_run", 16, 16);
-	usedEnemies.enemy1.SetTextureAttack("enemies/enemy1_attack", 11, 16);
+	usedEnemies.enemy1.SetTextureRun(textures.enemie1.texRun, 16, 16);
+	usedEnemies.enemy1.SetTextureAttack(textures.enemie1.texAttack, 11, 16);
+	usedEnemies.enemy1.SetPosition(800, 800);
 	usedEnemies.enemy1.SetMaxHp(50);
 	usedEnemies.enemy1.SetSpeed(0.2f);
 	usedEnemies.enemy1.SetDamage(3);
@@ -423,15 +449,12 @@ void InitEnemies(UsedEnemies & usedEnemies)
 	usedEnemies.enemy1.SetSpeedAttackAnimation(0.01f);
 	usedEnemies.enemy1.SetSpeedRunAnimation(0.04f);
 
-	/*Texture texRun2;
-	texRun2.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy2_run.png");
-	Texture texAttack2;
-	texAttack2.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy2_attack.png");
+	textures.enemie2.texRun.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy2_run.png");
+	textures.enemie2.texAttack.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy2_attack.png");
 
-	usedEnemies.enemy2.SetTextureRun(texRun2, 16, 16);
-	usedEnemies.enemy2.SetTextureAttack(texAttack2, 11, 16);*/
-	usedEnemies.enemy2.SetTextureRun("enemies/enemy2_run", 24, 16);
-	usedEnemies.enemy2.SetTextureAttack("enemies/enemy2_attack", 22, 16);
+	usedEnemies.enemy2.SetTextureRun(textures.enemie2.texRun, 24, 16);
+	usedEnemies.enemy2.SetTextureAttack(textures.enemie2.texAttack, 22, 16);
+	usedEnemies.enemy2.SetPosition(800, 800);
 	usedEnemies.enemy2.SetMaxHp(100);
 	usedEnemies.enemy2.SetSpeed(0.12f);
 	usedEnemies.enemy2.SetDamage(5);
@@ -439,8 +462,12 @@ void InitEnemies(UsedEnemies & usedEnemies)
 	usedEnemies.enemy2.SetSpeedAttackAnimation(0.01f);
 	usedEnemies.enemy2.SetSpeedRunAnimation(0.04f);
 
-	usedEnemies.enemy3.SetTextureRun("enemies/enemy3_run", 30, 9);
-	usedEnemies.enemy3.SetTextureAttack("enemies/enemy3_attack", 15, 9);
+	textures.enemie3.texRun.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy3_run.png");
+	textures.enemie3.texAttack.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy3_attack.png");
+
+	usedEnemies.enemy3.SetTextureRun(textures.enemie3.texRun, 30, 9);
+	usedEnemies.enemy3.SetTextureAttack(textures.enemie3.texAttack, 15, 9);
+	usedEnemies.enemy3.SetPosition(800, 800);
 	usedEnemies.enemy3.SetMaxHp(300);
 	usedEnemies.enemy3.SetBossAnim(true);
 	usedEnemies.enemy3.SetSpeed(0.1f);
@@ -448,11 +475,13 @@ void InitEnemies(UsedEnemies & usedEnemies)
 	usedEnemies.enemy3.SetCoins(100);
 	usedEnemies.enemy3.SetSpeedAttackAnimation(0.01f);
 	usedEnemies.enemy3.SetSpeedRunAnimation(0.03f);
-	usedEnemies.enemy3.SetScale(1.2, 1.2);
+	usedEnemies.enemy3.SetScale(1.2f, 1.2f);
 }
-void InitPlayer(Player & player)
+void InitPlayer(Player & player, Textures & textures)
 {
-	player.SetSpriteMaps("player_idle", 22, 8, "player_run", 22, 8);
+	textures.player.idle.loadFromFile(PATH_TO_TEXTURES + "player_idle.png");
+	textures.player.run.loadFromFile(PATH_TO_TEXTURES + "player_run.png");
+	player.SetSpriteMaps(textures.player.idle, 22, 8, textures.player.run, 22, 8);
 	player.SetPosition(800, 600);
 	player.SetBullet("bullet", 5, 1.f);
 	player.SetMaxHp(50);
@@ -469,10 +498,17 @@ void InitAreasPlacingTower(AreasPlacingTower & areasPlacing)
 	areasPlacing.notPlacingArea.setFillColor(nonPlaceAreaColor);
 	areasPlacing.notPlacingArea.setOrigin(areasPlacing.notPlacingArea.getRadius(), areasPlacing.notPlacingArea.getRadius());
 }
-void InitPortal(Portal & portal)
+void InitPortal(Portal & portal, Textures & textures)
 {
-	portal.SetSpriteMap("portal", 7, 1);
+	textures.portal.loadFromFile(PATH_TO_TEXTURES + "portal.png");
+	portal.SetSpriteMap(textures.portal, 7, 1);
 	portal.SetPosition(800, 800);
+}
+void InitCoin(Coin & coin, Textures & textures, Font font)
+{
+	textures.coin.loadFromFile(PATH_TO_TEXTURES + "coin.png");
+	coin.SetSpriteMap(textures.coin, 10, 1);
+	coin.SetFont(font);
 }
 
 int main()
@@ -487,6 +523,8 @@ int main()
 	Text playerMoneyText("", fontForMoney, 20);
 	playerMoneyText.setStyle(Text::Bold);
 
+	Textures textures;
+
 	Player player;
 	UsedTowers usedTowers;
 	UsedIcons usedIcons;
@@ -495,16 +533,16 @@ int main()
 	AreasPlacingTower areasPlacingTower;
 	Portal portal;
 	
-	InitPlayer(player);
-	InitTowers(usedTowers);
+	InitPlayer(player, textures);
+	InitTowers(usedTowers, textures);
 	InitIcons(usedIcons);
-	InitEnemies(usedEnemies);
+	InitEnemies(usedEnemies, textures);
 	InitCursors(usedCursors);
 	InitAreasPlacingTower(areasPlacingTower);
-	InitPortal(portal);
-
-	Coin coin("coin", 10, 1);
-	coin.SetFont(fontForMoney);
+	InitPortal(portal, textures);
+	
+	Coin coin;
+	InitCoin(coin, textures, fontForMoney);
 
 	list<Tower*> towersInGame;
 	list<Enemy*> enemies;
@@ -523,30 +561,30 @@ int main()
 	mapSprite.setTexture(mapTex);
 	mapSprite.setScale(2, 2);
 
-	vector<int> mapUsedEnemies = { 1, 1, 1, 2, 2, 1, 2, 1, 2, 3,
-							       2, 2, 1, 2, 2, 2, 3, 3, 2, 2 };
+	vector<int> mapUsedEnemies = { 1,1,2,2,1,3,3,3, 1, 1, 1, 1, 1, 1, 1, 1,
+									2, 3,2,1,2,3,2,1,2,2,2,1,2,3,3,3,2,1,2,2,3,3,2,2};
 
-	list<Enemy*> enemiesInLevel;
+	vector<Enemy*> enemiesInLevel;
+	enemiesInLevel.reserve(mapUsedEnemies.size());
+	cout << 11 << endl;
 	for (size_t i = 0; i < mapUsedEnemies.size(); i++)
 	{
-		Enemy* spawnEnemy = new Enemy;
+		Enemy *newEnemy = new Enemy;
 		if (mapUsedEnemies[i] == 1)
 		{
-			*spawnEnemy = usedEnemies.enemy1;
+			*newEnemy = usedEnemies.enemy1;
 		}
-		if (mapUsedEnemies[i] == 2)
+		else if (mapUsedEnemies[i] == 2)
 		{
-			*spawnEnemy = usedEnemies.enemy2;
+			*newEnemy = usedEnemies.enemy2;
 		}
-		if (mapUsedEnemies[i] == 3)
+		else if (mapUsedEnemies[i] == 3)
 		{
-			*spawnEnemy = usedEnemies.enemy3;
+			*newEnemy = usedEnemies.enemy3;
 		}
-
-		spawnEnemy->SetPosition(800, 800);
-		enemiesInLevel.push_back(spawnEnemy);
+		enemiesInLevel.push_back(newEnemy);
 	}
-	list<Enemy*>::iterator iterEnemy = enemiesInLevel.begin();
+	vector<Enemy*>::iterator iterEnemy = enemiesInLevel.begin();
 
 	float timerEnemySpawn = 4000;
 	int difLevel = 0;
