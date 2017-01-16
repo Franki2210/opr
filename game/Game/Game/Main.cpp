@@ -11,20 +11,90 @@
 #include "Portal.h"
 #include "Bonus.h"
 #include "ChangeHpView.h"
+#include "Meteor.h"
+#include "Explosion.h"
+#include "Menu.h"
+#include "Lose.h"
+#include "Win.h"
+
+const int SCREEN_WIDTH = 1600;
+const int SCREEN_HEIGHT = 900;
 
 /*
-TODO: 
-  Сделать препятствия
-	по карте (возможно) (какие-либо объекты)
-  Сделать уровни
-    каждый уровень даёт испробывать новую пушку (в идеале)
-	с каждым уровнем сложнее
-  Добавить звуки и музыку
-  Добавить основное меню
-  Добавить паузу
-  Добавить меню паузы
-  Добавить интерфейс
+TODO:
+  Добавить облачко после монстра
 */
+
+class CameraShake
+{
+public:
+	CameraShake() = default;
+	~CameraShake() = default;
+
+	void SetShake(bool shake)
+	{
+		isShake = shake;
+	}
+	bool GetShake()
+	{
+		return isShake;
+	}
+	void SetOffsetWithShake(int value)
+	{
+		offset = value;
+	}
+
+	void Update(View & view, Vector2f & positionPlayer, float time)
+	{
+		if (timerShake > 0 && isShake)
+		{
+			timerShake -= time;
+			Vector2f randPosition((offset/2) - float(rand()%offset), (offset / 2) - float(rand() % offset));
+			view.setCenter(positionPlayer + randPosition);
+		}
+		else
+		{
+			isShake = false;
+			timerShake = timeShake;
+		}
+	}
+private:
+	float timeShake = 1000.0f;
+	float timerShake = timeShake;
+	int offset = 1;
+	bool isShake;
+};
+class Vignette
+{
+public:
+	Vignette() = default;
+	~Vignette() = default;
+	
+	void SetTexture(Texture & texture)
+	{
+		sprite.setTexture(texture);
+		sprite.setOrigin(sprite.getGlobalBounds().width / 2, sprite.getGlobalBounds().height / 2);
+	}
+
+	void SetActive(bool value)
+	{
+		isActive = value;
+	}
+	bool GetActive()
+	{
+		return isActive;
+	}
+
+	void Draw(RenderWindow & window)
+	{
+		sprite.setPosition(window.getView().getCenter());
+		window.draw(sprite);
+	}
+private:
+	bool isActive = false;
+	Sprite sprite;
+};
+
 class Icon
 {
 public:
@@ -91,6 +161,55 @@ private:
 	bool isActive = false;
 };
 
+struct TexturesEnemie
+{
+	Texture texRun;
+	Texture texAttack;
+};
+struct TexturesPlayer
+{
+	Texture idle;
+	Texture run;
+};
+struct TextureBonuses
+{
+	Texture fireAccelTex;
+	Texture speedIncTex;
+	Texture damageIncTex;
+	Texture healthIncTex;
+};
+struct TexturesBullets
+{
+	Texture gunShot;
+	Texture twinGunShot;
+	Texture laserShot;
+};
+struct TexturesMeteor
+{
+	Texture texture;
+	Texture shadow;
+	Texture pointArrival;
+};
+
+struct Textures
+{
+	TexturesEnemie enemie1;
+	TexturesEnemie enemie2;
+	TexturesEnemie enemie3;
+	TexturesPlayer player;
+	TextureBonuses bonuses;
+	TexturesBullets bullets;
+	TexturesMeteor meteor;
+	Texture tower1;
+	Texture tower2;
+	Texture tower3;
+	Texture coin;
+	Texture portal;
+	Texture map;
+	Texture explosion;
+	Texture vignette;
+};
+
 struct Obstacles
 {
 	RectangleShape topObstacle;
@@ -136,7 +255,13 @@ struct UsedBonuses
 	Bonus damageIncrease;
 	Bonus healthIncrease;
 };
-
+struct UsedBullets
+{
+	Bullet playerGunShot;
+	Bullet gunShot;
+	Bullet twinGunShot;
+	Bullet laserShot;
+};
 struct UsedEntities
 {
 	UsedIcons icons;
@@ -144,7 +269,10 @@ struct UsedEntities
 	UsedEnemies enemies;
 	UsedCursors cursors;
 	UsedBonuses bonuses;
+	UsedBullets bullets;
 	ChangeHpView changeHpView;
+	Meteor meteor;
+	Explosion explosion;
 };
 
 struct Entities
@@ -158,40 +286,65 @@ struct Entities
 	list<Coin*> coins;
 	list<Bonus*> bonuses;
 	list<ChangeHpView*> changeHpViews;
+	list<Meteor*> meteors;
+	list<Explosion*> explosions;
 };
 
-struct TexturesEnemies
+struct UsedTextsTowersPrice
 {
-	Texture texRun;
-	Texture texAttack;
+	Text tower1;
+	Text tower2;
+	Text tower3;
 };
-struct TexturesPlayer
+struct UsedTexts
 {
-	Texture idle;
-	Texture run;
-};
-struct TextureBonuses
-{
-	Texture fireAccelTex;
-	Texture speedIncTex;
-	Texture damageIncTex;
-	Texture healthIncTex;
+	UsedTextsTowersPrice towersPrice;
 };
 
-struct Textures
+struct GunShotSounds
 {
-	TexturesEnemies enemie1;
-	TexturesEnemies enemie2;
-	TexturesEnemies enemie3;
-	TexturesPlayer player;
-	TextureBonuses bonuses;
-	Texture tower1;
-	Texture tower2;
-	Texture tower3;
-	Texture coin;
-	Texture portal;
-	Texture map;
+	SoundBuffer shot1Buffer;
+	SoundBuffer shot2Buffer;
+	SoundBuffer shot3Buffer;
+	Sound shot1;
+	Sound shot2;
+	Sound shot3;
+};
+struct LaserShotSounds
+{
+	SoundBuffer shot1Buffer;
+	SoundBuffer shot2Buffer;
+	SoundBuffer shot3Buffer;
 
+	Sound shot1;
+	Sound shot2;
+	Sound shot3;
+	Sound shot4;
+};
+struct StepsSounds
+{
+	SoundBuffer step1;
+	SoundBuffer step2;
+	SoundBuffer step3;
+	SoundBuffer step4;
+};
+struct OneSound
+{
+	SoundBuffer soundBuf;
+	Sound sound;
+};
+struct UsedSounds
+{
+	GunShotSounds playerGunShots;
+	GunShotSounds gunShots;
+	LaserShotSounds laserShots;
+	StepsSounds steps;
+	OneSound placeTower;
+	OneSound dropItem;
+	OneSound meteorFall;
+	OneSound evilLaugh;
+	OneSound explosion;
+	OneSound heartbeat;
 };
 
 void SpawnCoin(list<Coin*> & coins, Coin & coin, int value, Vector2f position)
@@ -237,14 +390,32 @@ void SpawnChangeHpView(list<ChangeHpView*> & changeHpViews, ChangeHpView & usedC
 	newChangeHpView->SetValue(damage);
 	changeHpViews.push_back(newChangeHpView);
 }
+void SpawnExplosion(list<Explosion*> & explosions, Explosion & explosion, CameraShake & cameraShake, Vector2f position, RenderWindow & window)
+{
+	Explosion *newExplosion = new Explosion;
+	*newExplosion = explosion;
+	newExplosion->SetPosition(position);
+	FloatRect rect;
+	rect.left = window.getView().getCenter().x - window.getView().getSize().x / 2;
+	rect.top = window.getView().getCenter().y - window.getView().getSize().y / 2;
+	rect.height = window.getView().getSize().y;
+	rect.width = window.getView().getSize().x;
+	if (rect.contains(position))
+	{
+		newExplosion->GetSound()->play();
+		cameraShake.SetShake(true);
+	}	
+	explosions.push_back(newExplosion);
+}
 
 void PlayerShot(Entities & entities, Vector2f mousePos)
 {
-	Bullet *bullet = new Bullet;
-	*bullet = entities.player.GetBullet();
+	Bullet *bullet = new Bullet;					//Создаём пулю
+	*bullet = entities.player.GetBullet();			//Присваиваем ей пулю от игрока
 	bullet->SetStartPosition(entities.player.GetPosition());
-	bullet->SetEnemyPos(mousePos);
+	bullet->SetEnemyPos(mousePos);                  //Позиция цели
 	entities.bullets.push_back(bullet);
+	bullet->GetSound()->play();
 	entities.player.canShot = false;
 }
 void CheckObstacles(Obstacles & obstacles, Player & player)
@@ -305,12 +476,21 @@ void TowerUpdateAndDraw(Entities & entities, Tower *placingTower, bool & towerIn
 						tower->Update(time, nearEnemyPosition);
 					}
 
-					if (tower->canShot) //????
+					if (tower->canShot)
 					{
 						Bullet *bullet = new Bullet;
 						*bullet = tower->GetBullet();
 						bullet->SetEnemyPos(tower->GetEnemyPos());
 						entities.bullets.push_back(bullet);
+						FloatRect rect;
+						rect.left = window.getView().getCenter().x - window.getView().getSize().x / 2;
+						rect.top = window.getView().getCenter().y - window.getView().getSize().y / 2;
+						rect.height = window.getView().getSize().y;
+						rect.width = window.getView().getSize().x;
+						if (rect.contains(tower->GetPosition()))
+						{
+							bullet->GetSound()->play();
+						}
 						tower->canShot = false;
 					}
 				}
@@ -454,7 +634,7 @@ void CoinsUpdateAndDraw(list<Coin*> & coins, RenderWindow & window, float time)
 		}
 	}
 }
-void IconsUpdateAndDraw(UsedEntities & usedEntities, Entities & entities, View & view, RenderWindow & window)
+void IconsUpdateAndDraw(UsedEntities & usedEntities, Entities & entities, UsedTexts & texts, View & view, RenderWindow & window)
 {
 	if (usedEntities.icons.icon1.GetActive() && entities.player.GetMoney() < usedEntities.towers.tower1.GetPrice())
 	{
@@ -489,6 +669,13 @@ void IconsUpdateAndDraw(UsedEntities & usedEntities, Entities & entities, View &
 	usedEntities.icons.icon2.Draw(window);
 	usedEntities.icons.icon3.SetPosition(view.getCenter() + Vector2f(100, 300));
 	usedEntities.icons.icon3.Draw(window);
+
+	texts.towersPrice.tower1.setPosition(view.getCenter() + Vector2f(-150, 230));
+	window.draw(texts.towersPrice.tower1);
+	texts.towersPrice.tower2.setPosition(view.getCenter() + Vector2f(-50, 230));
+	window.draw(texts.towersPrice.tower2);
+	texts.towersPrice.tower3.setPosition(view.getCenter() + Vector2f(50, 230));
+	window.draw(texts.towersPrice.tower3);
 }
 void PortalUpdateAndDraw(Entities & entities, RenderWindow & window, float time)
 {
@@ -500,7 +687,7 @@ void PlayerUpdateAndDraw(Player & player, RenderWindow & window, float time)
 	player.Update(time);
 	player.Draw(window);
 }
-void BonusesUpdateAndDraw(Entities & entities, RenderWindow & window, float time)
+void BonusesUpdateAndDraw(Entities & entities, UsedSounds & sounds, RenderWindow & window, float time)
 {
 	for (auto it = entities.bonuses.begin(); it != entities.bonuses.end();)
 	{
@@ -516,6 +703,7 @@ void BonusesUpdateAndDraw(Entities & entities, RenderWindow & window, float time
 			{
 				entities.player.AddBonus(*bonus);
 				bonus->isDestroy = true;
+				sounds.dropItem.sound.play();
 			}
 			bonus->UpdateOnMap(time);
 			bonus->Draw(window);
@@ -541,6 +729,65 @@ void ChangeHpViewsUpdateAndDraw(Entities & entities, RenderWindow & window, floa
 		}
 	}
 }
+void MeteorsUpdateAndDraw(Entities & entities, UsedEntities & usedEntities, CameraShake & cameraShake, RenderWindow & window, float time)
+{
+	for (auto itMeteor = entities.meteors.begin(); itMeteor != entities.meteors.end();)
+	{
+		Meteor *meteor = *itMeteor;
+		meteor->Update(time);
+		if (meteor->GetArrival())
+		{
+			SpawnExplosion(entities.explosions, usedEntities.explosion, cameraShake, meteor->GetArrivalPosition(), window);
+			for (auto it = entities.enemies.begin(); it != entities.enemies.end();)
+			{
+				Enemy *enemy = *it;
+				if (meteor->GetArrivalArea().intersects(enemy->damageArea.getGlobalBounds()))
+				{
+					enemy->TakeDamage(meteor->GetDamage());
+				}
+				it++;
+			}
+			for (auto it = entities.towers.begin(); it != entities.towers.end();)
+			{
+				Tower *tower = *it;
+				if (meteor->GetArrivalArea().intersects(tower->boundsArea.getGlobalBounds()))
+				{
+					tower->TakeDamage(meteor->GetDamage());
+				}
+				it++;
+			}
+			if (meteor->GetArrivalArea().intersects(entities.player.GetGlobalBounds()))
+			{
+				entities.player.TakeDamage(meteor->GetDamage());
+			}
+			itMeteor = entities.meteors.erase(itMeteor);
+			delete(meteor);
+		}
+		else
+		{
+			meteor->Draw(window);
+			itMeteor++;
+		}
+	}
+}
+void ExplosionsUpdateAndDraw(list<Explosion*> & explosions, RenderWindow & window, float time)
+{
+	for (auto it = explosions.begin(); it != explosions.end();)
+	{
+		Explosion *explosion = *it;
+		explosion->Update(time);
+		if (explosion->GetIsDestroy())
+		{
+			it = explosions.erase(it);
+			delete(explosion);
+		}
+		else
+		{
+			explosion->Draw(window);
+			it++;
+		}
+	}
+}
 
 void InitCursors(UsedCursors & cursors)
 {
@@ -560,12 +807,12 @@ void InitCursors(UsedCursors & cursors)
 	cursors.handCursor.setOrigin(cursors.handTex.getSize().x / 2.0f, cursors.handTex.getSize().y / 2.0f);
 	cursors.handCursor.setScale(0.5, 0.5);
 }
-void InitTowers(UsedTowers & towers, Textures & textures)
+void InitTowers(UsedTowers & towers, Textures & textures, UsedBullets & bullets)
 {
 	textures.tower1.loadFromFile(PATH_TO_TEXTURES + "towers/gun_turret.png");
 	towers.tower1.SetSpriteMap(textures.tower1, 2, 64);
 	towers.tower1.SetMaxHp(300);
-	towers.tower1.SetBullet("bullet", 1.0f, 0.5f);
+	towers.tower1.SetBullet(bullets.gunShot);
 	towers.tower1.SetReloadTime(200);
 	towers.tower1.SetActionRadius(150);
 	towers.tower1.SetPrice(50);
@@ -573,7 +820,7 @@ void InitTowers(UsedTowers & towers, Textures & textures)
 	textures.tower2.loadFromFile(PATH_TO_TEXTURES + "towers/twin_gun_turret.png");
 	towers.tower2.SetSpriteMap(textures.tower2, 8, 8);
 	towers.tower2.SetMaxHp(200);
-	towers.tower2.SetBullet("twin_bullet", 2.0f, 0.5f);
+	towers.tower2.SetBullet(bullets.twinGunShot);
 	towers.tower2.bullet.bulletSprite.setScale(Vector2f(1.1f, 1.1f));
 	towers.tower2.SetReloadTime(200);
 	towers.tower2.SetActionRadius(200);
@@ -582,13 +829,13 @@ void InitTowers(UsedTowers & towers, Textures & textures)
 	textures.tower3.loadFromFile(PATH_TO_TEXTURES + "towers/laser_turret.png");
 	towers.tower3.SetSpriteMap(textures.tower3, 8, 8);
 	towers.tower3.SetMaxHp(100);
-	towers.tower3.SetBullet("laser_bullet", 10, 2.f);
+	towers.tower3.SetBullet(bullets.laserShot);
 	towers.tower3.bullet.bulletSprite.setScale(Vector2f(1.1f, 1.1f));
-	towers.tower3.SetReloadTime(1000);
+	towers.tower3.SetReloadTime(4000);
 	towers.tower3.SetActionRadius(300);
 	towers.tower3.SetPrice(300);
 }
-void InitIcons(UsedIcons & icons)
+void InitIcons(UsedIcons & icons, UsedTexts & texts, Font & font)
 {
 	icons.icon1.SetSprite("gun_turret_icon");
 	icons.icon2.SetSprite("twin_gun_turret_icon");
@@ -597,6 +844,19 @@ void InitIcons(UsedIcons & icons)
 	icons.icon1.SetPosition(540, 650);
 	icons.icon2.SetPosition(640, 650);
 	icons.icon3.SetPosition(740, 650);
+
+	texts.towersPrice.tower1.setString("50");
+	texts.towersPrice.tower1.setPosition(500, 650);
+	texts.towersPrice.tower1.setFont(font);
+	texts.towersPrice.tower1.setCharacterSize(20);
+	texts.towersPrice.tower2.setString("100");
+	texts.towersPrice.tower2.setPosition(600, 650);
+	texts.towersPrice.tower2.setFont(font);
+	texts.towersPrice.tower2.setCharacterSize(20);
+	texts.towersPrice.tower3.setString("300");
+	texts.towersPrice.tower3.setPosition(700, 650);
+	texts.towersPrice.tower3.setFont(font);
+	texts.towersPrice.tower3.setCharacterSize(20);
 }
 void InitEnemies(UsedEnemies & enemies, Textures & textures)
 {
@@ -635,27 +895,28 @@ void InitEnemies(UsedEnemies & enemies, Textures & textures)
 	enemies.enemy3.SetMaxHp(300);
 	enemies.enemy3.SetBossAnim(true);
 	enemies.enemy3.SetSpeed(0.1f);
-	enemies.enemy3.SetDamage(10);
+	enemies.enemy3.SetDamage(15);
 	enemies.enemy3.SetCoins(100);
 	enemies.enemy3.SetSpeedAttackAnimation(0.01f);
 	enemies.enemy3.SetSpeedRunAnimation(0.03f);
 	enemies.enemy3.SetScale(1.2f, 1.2f);
 }
-void InitPlayer(Player & player, Textures & textures)
+void InitPlayer(Player & player, Textures & textures, Bullet & bullet, UsedSounds & usedSounds)
 {
 	textures.player.idle.loadFromFile(PATH_TO_TEXTURES + "player_idle.png");
 	textures.player.run.loadFromFile(PATH_TO_TEXTURES + "player_run.png");
 	player.SetSpriteMaps(textures.player.idle, 22, 8, textures.player.run, 22, 8);
 	player.SetPosition(800, 600);
 	player.SetSpeed(0.15f);
-	player.SetBullet("bullet", 5, 1.f);
+	player.SetBullet(bullet);
 	player.SetTimeBetweenShots(150.0f);
 	player.SetMaxHp(50);
+	player.SetSoundSteps(usedSounds.steps.step1, usedSounds.steps.step2, usedSounds.steps.step3, usedSounds.steps.step4, 280, 30);
 }
 void InitAreasPlacingTower(AreasPlacingTower & areasPlacing)
 {
 	areasPlacing.placingArea.setRadius(150);
-	Color placeAreaColor(0, 200, 0, 30);
+	Color placeAreaColor(0, 100, 200, 30);
 	areasPlacing.placingArea.setFillColor(placeAreaColor);
 	areasPlacing.placingArea.setOrigin(areasPlacing.placingArea.getRadius(), areasPlacing.placingArea.getRadius());
 
@@ -706,19 +967,132 @@ void InitBonuses(UsedBonuses & bonuses, Textures & textures)
 
 	bonuses.damageIncrease.SetBonus("damageInc", textures.bonuses.damageIncTex, 15, 8000, 10000);
 	bonuses.healthIncrease.SetBonus("healthInc", textures.bonuses.healthIncTex, 20, 8000);
-	bonuses.speedIncrease.SetBonus("speedInc", textures.bonuses.speedIncTex, 0.1, 8000, 10000);
+	bonuses.speedIncrease.SetBonus("speedInc", textures.bonuses.speedIncTex, 0.05f, 8000, 10000);
 	bonuses.fireAcceleration.SetBonus("fireAccel", textures.bonuses.fireAccelTex, 50, 8000, 10000);
 	bonuses.damageIncrease.SetScale(0.5f, 0.5f);
 	bonuses.healthIncrease.SetScale(0.5f, 0.5f);
 	bonuses.speedIncrease.SetScale(0.5f, 0.5f);
 	bonuses.fireAcceleration.SetScale(0.5f, 0.5f);
 }
+void InitBullets(UsedBullets & bullets, Textures & textures, UsedSounds & sounds)
+{
+	textures.bullets.gunShot.loadFromFile(PATH_TO_TEXTURES + "bullets/bullet.png");
+	textures.bullets.twinGunShot.loadFromFile(PATH_TO_TEXTURES + "bullets/twin_bullet.png");
+	textures.bullets.laserShot.loadFromFile(PATH_TO_TEXTURES + "bullets/laser_bullet.png");
+	bullets.gunShot.SetTexture(textures.bullets.gunShot);
+	bullets.twinGunShot.SetTexture(textures.bullets.twinGunShot);
+	bullets.laserShot.SetTexture(textures.bullets.laserShot);
+	bullets.playerGunShot.SetTexture(textures.bullets.gunShot);
+
+	bullets.gunShot.SetDamage(5.0f);
+	bullets.gunShot.SetSpeed(0.5f);
+	bullets.gunShot.SetSounds(&sounds.gunShots.shot1, &sounds.gunShots.shot2, &sounds.gunShots.shot3);
+
+	bullets.twinGunShot.SetDamage(10.0f);
+	bullets.twinGunShot.SetSpeed(0.5f);
+	bullets.twinGunShot.SetSounds(&sounds.gunShots.shot1, &sounds.gunShots.shot2, &sounds.gunShots.shot3);
+
+	bullets.laserShot.SetDamage(70.0f);
+	bullets.laserShot.SetSpeed(4.0f);
+	bullets.laserShot.SetSounds(&sounds.laserShots.shot1, &sounds.laserShots.shot2, &sounds.laserShots.shot3);
+
+	bullets.playerGunShot.SetDamage(5.0f);
+	bullets.playerGunShot.SetSpeed(0.5f);
+	bullets.playerGunShot.SetSounds(&sounds.playerGunShots.shot1, &sounds.playerGunShots.shot2, &sounds.playerGunShots.shot3);
+}
+void InitMeteor(Meteor & meteor, Textures & textures, UsedSounds & sounds)
+{
+	textures.meteor.texture.loadFromFile(PATH_TO_TEXTURES + "meteor/meteor.png");
+	textures.meteor.shadow.loadFromFile(PATH_TO_TEXTURES + "meteor/meteor_shadow.png");
+	textures.meteor.pointArrival.loadFromFile(PATH_TO_TEXTURES + "meteor/point_arrival.png");
+	meteor.SetMeteor(textures.meteor.texture, textures.meteor.shadow, textures.meteor.pointArrival, 20.0f, 0.5f);
+}
+void InitExplosion(Explosion & explosion, Textures & textures, UsedSounds & sounds)
+{
+	textures.explosion.loadFromFile(PATH_TO_TEXTURES + "explosion/explosion.png");
+	explosion.SetExplosion(textures.explosion, 6, 8, 0.04f);
+	explosion.SetSound(&sounds.explosion.sound);
+}
+void InitCameraShake(CameraShake & cameraShake)
+{
+	cameraShake.SetOffsetWithShake(10);
+}
+void InitVignette(Vignette & vignette, Textures & textures)
+{
+	textures.vignette.loadFromFile(PATH_TO_TEXTURES + "vignette.png");
+	vignette.SetTexture(textures.vignette);
+}
+
+void InitMusics(Music & music, Music & winMusic, Music & loseMusic, Music & menuMusic)
+{
+	music.openFromFile(PATH_TO_MUSIC + "music.ogg");
+	music.setLoop(true);
+	winMusic.openFromFile(PATH_TO_MUSIC + "win.ogg");
+	loseMusic.openFromFile(PATH_TO_MUSIC + "lose.ogg");
+	menuMusic.openFromFile(PATH_TO_MUSIC + "menu.ogg");
+}
+void InitSounds(UsedSounds & sounds)
+{
+	sounds.gunShots.shot1Buffer.loadFromFile(PATH_TO_SOUNDS + "bullets/gunshot1.ogg");
+	sounds.gunShots.shot2Buffer.loadFromFile(PATH_TO_SOUNDS + "bullets/gunshot2.ogg");
+	sounds.gunShots.shot3Buffer.loadFromFile(PATH_TO_SOUNDS + "bullets/gunshot3.ogg");
+	sounds.gunShots.shot1.setBuffer(sounds.gunShots.shot1Buffer);
+	sounds.gunShots.shot2.setBuffer(sounds.gunShots.shot2Buffer);
+	sounds.gunShots.shot3.setBuffer(sounds.gunShots.shot3Buffer);
+	sounds.gunShots.shot1.setVolume(25);
+	sounds.gunShots.shot2.setVolume(25);
+	sounds.gunShots.shot3.setVolume(25);
+	sounds.playerGunShots.shot1.setBuffer(sounds.gunShots.shot1Buffer);
+	sounds.playerGunShots.shot2.setBuffer(sounds.gunShots.shot2Buffer);
+	sounds.playerGunShots.shot3.setBuffer(sounds.gunShots.shot3Buffer);
+	sounds.playerGunShots.shot1.setVolume(60);
+	sounds.playerGunShots.shot2.setVolume(60);
+	sounds.playerGunShots.shot3.setVolume(60);
+	sounds.laserShots.shot1Buffer.loadFromFile(PATH_TO_SOUNDS + "bullets/laser1.ogg");
+	sounds.laserShots.shot1Buffer.loadFromFile(PATH_TO_SOUNDS + "bullets/laser2.ogg");
+	sounds.laserShots.shot1Buffer.loadFromFile(PATH_TO_SOUNDS + "bullets/laser3.ogg");
+	sounds.laserShots.shot1.setBuffer(sounds.laserShots.shot1Buffer);
+	sounds.laserShots.shot2.setBuffer(sounds.laserShots.shot2Buffer);
+	sounds.laserShots.shot3.setBuffer(sounds.laserShots.shot3Buffer);
+	sounds.steps.step1.loadFromFile(PATH_TO_SOUNDS + "walking/walk1.ogg");
+	sounds.steps.step2.loadFromFile(PATH_TO_SOUNDS + "walking/walk2.ogg");
+	sounds.steps.step3.loadFromFile(PATH_TO_SOUNDS + "walking/walk3.ogg");
+	sounds.steps.step4.loadFromFile(PATH_TO_SOUNDS + "walking/walk4.ogg");
+
+	sounds.placeTower.soundBuf.loadFromFile(PATH_TO_SOUNDS + "place_tower/place.ogg");
+	sounds.placeTower.sound.setBuffer(sounds.placeTower.soundBuf);
+	sounds.dropItem.soundBuf.loadFromFile(PATH_TO_SOUNDS + "drop_item.wav");
+	sounds.dropItem.sound.setBuffer(sounds.dropItem.soundBuf);
+
+	sounds.meteorFall.soundBuf.loadFromFile(PATH_TO_SOUNDS + "meteor_fall.ogg");
+	sounds.meteorFall.sound.setBuffer(sounds.meteorFall.soundBuf);
+	sounds.meteorFall.sound.setVolume(50);
+
+	sounds.evilLaugh.soundBuf.loadFromFile(PATH_TO_SOUNDS + "evil_laugh.ogg");
+	sounds.evilLaugh.sound.setBuffer(sounds.evilLaugh.soundBuf);
+
+	sounds.explosion.soundBuf.loadFromFile(PATH_TO_SOUNDS + "explosion.ogg");
+	sounds.explosion.sound.setBuffer(sounds.explosion.soundBuf);
+	sounds.explosion.sound.setVolume(150);
+
+	sounds.heartbeat.soundBuf.loadFromFile(PATH_TO_SOUNDS + "heartbeat.ogg");
+	sounds.heartbeat.sound.setBuffer(sounds.heartbeat.soundBuf);
+	sounds.heartbeat.sound.setVolume(400);
+	sounds.heartbeat.sound.setLoop(true);
+}
 
 int main()
 {
-	RenderWindow window(VideoMode(1280, 720), "Gama", Style::Default);
+	RenderWindow window(VideoMode(1600, 900), "Game???", Style::Default);
 	View view;
 	view.reset(FloatRect(0, 0, 1280, 720));
+
+	Music menuMusic;
+	Music bgMusic;
+	Music loseMusic;
+	Music winMusic;
+	UsedSounds usedSounds;
+	UsedTexts usedTexts;
 
 	Font font;
 	font.loadFromFile(PATH_TO_FONTS + "font1.ttf");
@@ -732,10 +1106,13 @@ int main()
 	AreasPlacingTower areasPlacingTower;
 
 	Coin coin;
+	CameraShake cameraShake;
+	Vignette vignette;
 	
-	InitPlayer(entities.player, textures);
-	InitTowers(usedEntities.towers, textures);
-	InitIcons(usedEntities.icons);
+	InitBullets(usedEntities.bullets, textures, usedSounds);
+	InitPlayer(entities.player, textures, usedEntities.bullets.playerGunShot, usedSounds);
+	InitTowers(usedEntities.towers, textures, usedEntities.bullets);
+	InitIcons(usedEntities.icons, usedTexts, font);
 	InitEnemies(usedEntities.enemies, textures);
 	InitCursors(usedEntities.cursors);
 	InitAreasPlacingTower(areasPlacingTower);
@@ -743,18 +1120,30 @@ int main()
 	InitObstacles(entities.obstacles);
 	InitBonuses(usedEntities.bonuses, textures);
 	InitCoin(coin, textures, font);
+	InitMeteor(usedEntities.meteor, textures, usedSounds);
+	InitExplosion(usedEntities.explosion, textures, usedSounds);
+	InitCameraShake(cameraShake);
+
 	InitChangeHpView(usedEntities.changeHpView, font);
+
+	InitMusics(bgMusic, winMusic, loseMusic, menuMusic);
+	InitSounds(usedSounds);
 
 	Tower *placingTower = new Tower;
 
 	bool intersectAtPlacing = false;
 	bool towerInstallation = false;
 	bool drawActionArea = false;
+	bool isShakeCamera = false;
 
 	Sprite mapSprite;
 	InitMap(mapSprite, textures);
+	InitVignette(vignette, textures);
 
-	vector<int> mapUsedEnemies = {1,1,2,2,1,3,3,3,1,1,1,1,1,1,1,1,2,3,2,1,2,3,2,1,2,2,2,1,2,3,3,3,2,1,2,2,3,3,2,2};
+	vector<int> mapUsedEnemies = {1,1,2,2,1,3,3,1,1,1,1,1,1,1,1,2,3,2,1,2,3,2,1,2,2,2,1,2,3,3,
+								  3,2,1,2,2,3,3,2,2,2,2,3,3,2,2,2,2,1,2,2,2,1,1,1,1,1,1,1,1,1,
+								  1,2,2,2,2,2,2,3,3,3,3,3,3,2,2,2,2,1,3,1,1,1,1,1,1,1,1,1,1,3,
+								  1,1,3,3,3,3,1,1,1,3,3,3,2,2,2,3,2,1,1,1,2,3,2,3,3,3,2,2,3,3};
 
 	vector<Enemy*> enemiesInLevel;
 	enemiesInLevel.reserve(mapUsedEnemies.size());
@@ -781,10 +1170,11 @@ int main()
 	int difLevel = 0;
 
 	window.setKeyRepeatEnabled(false);
-	window.setMouseCursorVisible(false);
 	window.setFramerateLimit(150);
 	Clock clock;
 	FPS fps;
+
+	state gameState = state::menu;
 
 	while (window.isOpen())
 	{
@@ -806,150 +1196,215 @@ int main()
 
 			if (event.type == Event::KeyPressed)//событие нажатия клавиши
 			{
-				if (event.key.code == Keyboard::Num1 || event.key.code == Keyboard::Num2 || event.key.code == Keyboard::Num3)
+				if (gameState == state::game)
 				{
-					if (event.key.code == Keyboard::Num1 && entities.player.GetMoney() >= usedEntities.towers.tower1.GetPrice())
+					if (event.key.code == Keyboard::Num1 || event.key.code == Keyboard::Num2 || event.key.code == Keyboard::Num3)
 					{
-						if (!towerInstallation) placingTower = new Tower;
-						*placingTower = usedEntities.towers.tower1;
-						towerInstallation = true;
+						if (event.key.code == Keyboard::Num1 && entities.player.GetMoney() >= usedEntities.towers.tower1.GetPrice())
+						{
+							if (!towerInstallation) placingTower = new Tower;
+							*placingTower = usedEntities.towers.tower1;
+							towerInstallation = true;
+						}
+						if (event.key.code == Keyboard::Num2 && entities.player.GetMoney() >= usedEntities.towers.tower2.GetPrice())
+						{
+							if (!towerInstallation) placingTower = new Tower;
+							*placingTower = usedEntities.towers.tower2;
+							towerInstallation = true;
+						}
+						if (event.key.code == Keyboard::Num3 && entities.player.GetMoney() >= usedEntities.towers.tower3.GetPrice())
+						{
+							if (!towerInstallation) placingTower = new Tower;
+							*placingTower = usedEntities.towers.tower3;
+							towerInstallation = true;
+						}
+
 					}
-					if (event.key.code == Keyboard::Num2 && entities.player.GetMoney() >= usedEntities.towers.tower2.GetPrice())
+					if (event.key.code == Keyboard::R)
 					{
-						if (!towerInstallation) placingTower = new Tower;
-						*placingTower = usedEntities.towers.tower2;
-						towerInstallation = true;
+						if (drawActionArea == false) drawActionArea = true;
+						else drawActionArea = false;
 					}
-					if (event.key.code == Keyboard::Num3 && entities.player.GetMoney() >= usedEntities.towers.tower3.GetPrice())
-					{
-						if (!towerInstallation) placingTower = new Tower;
-						*placingTower = usedEntities.towers.tower3;
-						towerInstallation = true;
-					}
-					
+					if (event.key.code == Keyboard::Escape) window.close();
 				}
-				if (event.key.code == Keyboard::R)
-				{
-					if (drawActionArea == false) drawActionArea = true;
-					else drawActionArea = false;
-				}
-				if (event.key.code == Keyboard::Escape) window.close();
 			}
 		}
 
-		timerEnemySpawn -= time;
-
-		if (timerEnemySpawn <= 0)
+		if (gameState == state::game)
 		{
-			if (difLevel >= 0 && difLevel < 5)
+			if (bgMusic.getStatus() == SoundStream::Stopped) 
 			{
-				timerEnemySpawn = 4000;
-			}
-			else if (difLevel >= 5 && difLevel < 10)
-			{
-				timerEnemySpawn = 3500;
-			}
-			else if (difLevel >= 10 && difLevel < 15)
-			{
-				timerEnemySpawn = 3000;
-			}
-			else if (difLevel >= 15)
-			{
-				timerEnemySpawn = 2500;
+				bgMusic.play();
 			}
 
-			if (iterEnemy != enemiesInLevel.end())
+			timerEnemySpawn -= time;
+
+			if (timerEnemySpawn <= 0)
 			{
-				entities.enemies.push_back(*iterEnemy);
-				iterEnemy++;
-			}
-			difLevel++;
-		}
-		intersectAtPlacing = false;
+				if (difLevel >= 0 && difLevel < 5) timerEnemySpawn = 4000;
+				else if (difLevel >= 5 && difLevel < 10) timerEnemySpawn = 3000;
+				else if (difLevel >= 10 && difLevel < 15) timerEnemySpawn = 2000;
+				else if (difLevel >= 15 && difLevel < 30) timerEnemySpawn = 1500;
+				else if (difLevel >= 30) timerEnemySpawn = 500;
 
-		window.clear(Color::White);
-
-		window.draw(mapSprite);		
-	
-		PortalUpdateAndDraw(entities, window, time);
-		TowerUpdateAndDraw(entities, placingTower, towerInstallation, intersectAtPlacing, drawActionArea, time, window);
-		BulletUpdateAndDraw(entities, usedEntities, window, time);
-		EnemiesUpdateAndDraw(entities, usedEntities.bonuses, coin, window, time);
-		BonusesUpdateAndDraw(entities, window, time);
-		ChangeHpViewsUpdateAndDraw(entities, window, time);
-
-		if (Mouse::isButtonPressed(Mouse::Left) && !towerInstallation && entities.player.canShot)
-		{
-			PlayerShot(entities, mousePos);
-		}
-
-		//Установка башни
-		if (towerInstallation)
-		{
-			placingTower->SetPosition(mousePos);
-			if (areasPlacingTower.placingArea.getGlobalBounds().contains(mousePos) && !areasPlacingTower.notPlacingArea.getGlobalBounds().contains(mousePos) && !intersectAtPlacing)
-			{
-				placingTower->spriteMap.sprite.setColor(Color::Green);
-				window.draw(placingTower->actionArea);
-				if (Mouse::isButtonPressed(Mouse::Left))
+				if (iterEnemy != enemiesInLevel.end())
 				{
-					towerInstallation = false;
-					placingTower->isActive = true;
-					placingTower->spriteMap.sprite.setColor(Color::White);
-					entities.towers.push_back(placingTower);
-					entities.player.SubCoins(placingTower->GetPrice());
-					entities.player.canShot = false;
+					entities.enemies.push_back(*iterEnemy);
+					iterEnemy++;
 				}
+				else
+				{
+					if (entities.enemies.size() == 0)
+					{
+						gameState = state::win;
+						bgMusic.stop();
+						winMusic.play();
+					}
+				}
+				difLevel++;
+			}
+			intersectAtPlacing = false;
+
+			if (rand()%1000 <= 4)
+			{
+				Meteor* newMeteor = new Meteor;
+				*newMeteor = usedEntities.meteor;
+				newMeteor->SetArrivalPosition(float(rand() % 2000), float(rand() % 2000));
+				//newMeteor->SetArrivalPosition(entities.player.GetPosition());
+				entities.meteors.push_back(newMeteor);
+			}
+
+			if (rand()%10000 < 1)
+			{
+				usedSounds.evilLaugh.sound.play();
+			}
+
+			window.clear(Color::White);
+
+			window.draw(mapSprite);
+
+			PortalUpdateAndDraw(entities, window, time);
+			MeteorsUpdateAndDraw(entities, usedEntities, cameraShake, window, time);
+			ExplosionsUpdateAndDraw(entities.explosions, window, time);
+			BonusesUpdateAndDraw(entities, usedSounds, window, time);
+			TowerUpdateAndDraw(entities, placingTower, towerInstallation, intersectAtPlacing, drawActionArea, time, window);
+			BulletUpdateAndDraw(entities, usedEntities, window, time);
+			EnemiesUpdateAndDraw(entities, usedEntities.bonuses, coin, window, time);
+			ChangeHpViewsUpdateAndDraw(entities, window, time);
+
+			if (Mouse::isButtonPressed(Mouse::Left) && !towerInstallation && entities.player.canShot)
+			{
+				PlayerShot(entities, mousePos);
+			}
+
+			//Установка башни
+			if (towerInstallation)
+			{
+				placingTower->SetPosition(mousePos);
+				if (areasPlacingTower.placingArea.getGlobalBounds().contains(mousePos) && !areasPlacingTower.notPlacingArea.getGlobalBounds().contains(mousePos) && !intersectAtPlacing)
+				{
+					placingTower->spriteMap.sprite.setColor(Color::Green);
+					window.draw(placingTower->actionArea);
+					if (Mouse::isButtonPressed(Mouse::Left))
+					{
+						towerInstallation = false;
+						placingTower->isActive = true;
+						placingTower->spriteMap.sprite.setColor(Color::White);
+						entities.towers.push_back(placingTower);
+						entities.player.SubCoins(placingTower->GetPrice());
+						entities.player.canShot = false;
+						usedSounds.placeTower.sound.play();
+					}
+				}
+				else
+				{
+					placingTower->spriteMap.sprite.setColor(Color::Red);
+				}
+				placingTower->Update();
+				areasPlacingTower.placingArea.setPosition(entities.player.GetPosition());
+				areasPlacingTower.notPlacingArea.setPosition(entities.player.GetPosition());
+				window.draw(areasPlacingTower.placingArea);
+				window.draw(areasPlacingTower.notPlacingArea);
+				window.draw(placingTower->spriteMap.sprite);
+			}
+
+			CheckObstacles(entities.obstacles, entities.player);
+			PlayerUpdateAndDraw(entities.player, window, time);
+			CoinsUpdateAndDraw(entities.coins, window, time);
+
+			if (entities.player.GetPosition().x < 640 || entities.player.GetPosition().x > 1472 || entities.player.GetPosition().y < 360 || entities.player.GetPosition().y > 1752)
+			{
+				float tempX = entities.player.GetPosition().x;
+				float tempY = entities.player.GetPosition().y;
+				if (entities.player.GetPosition().x < 640) tempX = 640;
+				if (entities.player.GetPosition().x > 1472) tempX = 1472;
+				if (entities.player.GetPosition().y < 360) tempY = 360;
+				if (entities.player.GetPosition().y > 1752) tempY = 1752;
+				if (cameraShake.GetShake()) cameraShake.Update(view, Vector2f(tempX, tempY), time);
+				else view.setCenter(tempX, tempY);
 			}
 			else
 			{
-				placingTower->spriteMap.sprite.setColor(Color::Red);
+				if (cameraShake.GetShake()) cameraShake.Update(view, entities.player.GetPosition(), time);
+				else view.setCenter(entities.player.GetPosition());
 			}
-			placingTower->Update(time);
-			areasPlacingTower.placingArea.setPosition(entities.player.GetPosition());
-			areasPlacingTower.notPlacingArea.setPosition(entities.player.GetPosition());
-			window.draw(areasPlacingTower.placingArea);
-			window.draw(areasPlacingTower.notPlacingArea);
-			window.draw(placingTower->spriteMap.sprite);
+			window.setView(view);
+
+			if (towerInstallation)
+			{
+				usedEntities.cursors.handCursor.setPosition(mousePos);
+				window.draw(usedEntities.cursors.handCursor);
+			}
+			else
+			{
+				usedEntities.cursors.aimCursor.setPosition(mousePos);
+				window.draw(usedEntities.cursors.aimCursor);
+			}
+
+			IconsUpdateAndDraw(usedEntities, entities, usedTexts, view, window);
+
+			ostringstream playerMoneyString;
+			playerMoneyString << entities.player.GetMoney();
+			playerMoneyText.setString("Money: " + playerMoneyString.str());
+			playerMoneyText.setPosition(view.getCenter() + Vector2f(-540, 260));
+			window.draw(playerMoneyText);
+			if (entities.player.GetCurrentHp() < entities.player.GetMaxHp() * 0.2f)
+			{
+				if (bgMusic.getVolume() != 30) bgMusic.setVolume(30);
+				if (entities.player.GetBullet().GetVolumeSounds() != 20) entities.player.GetBullet().SetVolumeSounds(20);
+				if (usedSounds.heartbeat.sound.getStatus() != SoundSource::Playing)
+				{
+					usedSounds.heartbeat.sound.play();
+				}
+				vignette.Draw(window);
+			}
+			else
+			{
+				if (bgMusic.getVolume() != 100) bgMusic.setVolume(100);
+				if (entities.player.GetBullet().GetVolumeSounds() != 60) entities.player.GetBullet().SetVolumeSounds(60);
+				if (usedSounds.heartbeat.sound.getStatus() != SoundSource::Stopped)
+				{
+					usedSounds.heartbeat.sound.stop();
+				}
+			}
+			if (entities.player.GetCurrentHp() < 0) { gameState = state::lose; bgMusic.stop(); loseMusic.play(); };
 		}
-
-		CheckObstacles(entities.obstacles, entities.player);
-		PlayerUpdateAndDraw(entities.player, window, time);
-
-		CoinsUpdateAndDraw(entities.coins, window, time);
-
-		if (entities.player.GetPosition().x < 640 || entities.player.GetPosition().x > 1472 || entities.player.GetPosition().y < 360 || entities.player.GetPosition().y > 1752)
+		if (gameState == state::win)
 		{
-			float tempX = entities.player.GetPosition().x;
-			float tempY = entities.player.GetPosition().y;
-			if (entities.player.GetPosition().x < 640) tempX = 640;
-			if (entities.player.GetPosition().x > 1472) tempX = 1472;
-			if (entities.player.GetPosition().y < 360) tempY = 360;
-			if (entities.player.GetPosition().y > 1752) tempY = 1752;
-			view.setCenter(tempX, tempY);
+			Win(winMusic, gameState, view, window);
+			clock.restart();
 		}
-		else view.setCenter(entities.player.GetPosition());
-		window.setView(view);
-
-		if (towerInstallation)
+		if (gameState == state::lose)
 		{
-			usedEntities.cursors.handCursor.setPosition(mousePos);
-			window.draw(usedEntities.cursors.handCursor);
+			Lose(loseMusic, gameState, view, window);
+			clock.restart();
 		}
-		else
+		if (gameState == state::menu)
 		{
-			usedEntities.cursors.aimCursor.setPosition(mousePos);
-			window.draw(usedEntities.cursors.aimCursor);
+			Menu(menuMusic, gameState, view, window, time);
+			clock.restart();
 		}
 
-		IconsUpdateAndDraw(usedEntities, entities, view, window);
-
-		ostringstream playerMoneyString;
-		playerMoneyString << entities.player.GetMoney();
-		playerMoneyText.setString("Money: " + playerMoneyString.str());
-		playerMoneyText.setPosition(view.getCenter() + Vector2f(-540, 260));
-		window.draw(playerMoneyText);
-		
 		window.display();
 	}
 

@@ -54,8 +54,8 @@ public:
 			position = Vector2f(position.x, position.y - 0.04f * time);
 			currAlpha -= 0.15f * time;
 			if (currAlpha < 0) currAlpha = 0;
-			spriteMap.sprite.setColor(Color(255, 255, 255, currAlpha));
-			text.setColor(Color(255, 255, 255, currAlpha));
+			spriteMap.sprite.setColor(Color(255, 255, 255, Uint8(currAlpha)));
+			text.setColor(Color(255, 255, 255, Uint8(currAlpha)));
 			spriteMap.sprite.setPosition(position);
 			text.setPosition(position);
 		}

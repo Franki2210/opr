@@ -45,9 +45,9 @@ public:
 		{
 			timerToDisappearance -= time;
 			position = Vector2f(position.x, position.y - 0.05f * time);
-			currAlpha -= 0.2 * time;
+			currAlpha -= 0.2f * time;
 			if (currAlpha < 0) currAlpha = 0;
-			text.setColor(Color(255, 50, 50, currAlpha));
+			text.setColor(Color(255, 50, 50, Uint8(currAlpha)));
 			text.setPosition(position);
 		}
 		else

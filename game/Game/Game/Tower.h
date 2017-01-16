@@ -75,11 +75,9 @@ public:
 		return frame;
 	}
 
-	void SetBullet(string nameTexture, float damage, float speedBullet)
+	void SetBullet(Bullet bullet_)
 	{
-		bullet.SetTexture(nameTexture);
-		bullet.SetDamage(damage);
-		bullet.SetSpeed(speedBullet);
+		bullet = bullet_;
 	}
 	Bullet GetBullet()
 	{
@@ -125,7 +123,7 @@ public:
 		}
 		spriteMap.SetFrame((int)currFrame);
 	}
-	void Update(float const &time)
+	void Update()
 	{
 		spriteMap.sprite.setPosition(position);
 		actionArea.setPosition(position);

@@ -4,6 +4,14 @@
 #include "Bullet.h"
 #include "Bonus.h"
 
+struct SoundsSteps
+{
+	Sound step1;
+	Sound step2;
+	Sound step3;
+	Sound step4;
+};
+
 class Player : public Entity
 {
 public:
@@ -24,6 +32,22 @@ public:
 	{
 		spriteMapIdle.SetSpriteMap(texIdle, colIdle, lineIdle);
 		spriteMapRun.SetSpriteMap(texRun, colRun, lineRun);
+	}
+
+	void SetSoundSteps(SoundBuffer & soundBuf1, SoundBuffer & soundBuf2, SoundBuffer & soundBuf3, SoundBuffer & soundBuf4, float timeBetweenSounds, float volume)
+	{
+		soundsSteps.step1.setBuffer(soundBuf1);
+		soundsSteps.step2.setBuffer(soundBuf2);
+		soundsSteps.step3.setBuffer(soundBuf3);
+		soundsSteps.step4.setBuffer(soundBuf4);
+
+		soundsSteps.step1.setVolume(volume);
+		soundsSteps.step2.setVolume(volume);
+		soundsSteps.step3.setVolume(volume);
+		soundsSteps.step4.setVolume(volume);
+		
+		timeBetweenSoundsSteps = timeBetweenSounds;
+		timerBetweenSoundsSteps = timeBetweenSoundsSteps;
 	}
 
 	//Препятствие для игрока
@@ -92,11 +116,9 @@ public:
 	}
 
 	//Пули
-	void SetBullet(string nameTexture, float damage, float speedBullet)
+	void SetBullet(Bullet bullet_)
 	{
-		bullet.SetTexture(nameTexture);
-		bullet.SetDamage(damage);
-		bullet.SetSpeed(speedBullet);
+		bullet = bullet_;
 	}
 	Bullet GetBullet()
 	{
@@ -202,6 +224,7 @@ public:
 			isMove = true;
 		}
 
+
 		if (obstacle.contains(position.x + moveVector.x, position.y + moveVector.y))
 		{
 			isMove = false;
@@ -209,6 +232,23 @@ public:
 		else
 		{
 			position += moveVector;
+		}
+
+		if (isMove)
+		{
+			if (timerBetweenSoundsSteps > 0)
+			{
+				timerBetweenSoundsSteps -= time;
+			}
+			else
+			{
+				timerBetweenSoundsSteps = timeBetweenSoundsSteps;
+				int randSound = rand() % 4;
+				if (randSound == 0) soundsSteps.step1.play();
+				if (randSound == 1) soundsSteps.step2.play();
+				if (randSound == 2) soundsSteps.step3.play();
+				if (randSound == 3) soundsSteps.step4.play();
+			}
 		}
 
 		if (timerBetweenShots > 0 && !canShot)
@@ -255,6 +295,8 @@ private:
 	float reloadTimer;
 	float timeBetweenShots = 150;
 	float timerBetweenShots = timeBetweenShots;
+	float timeBetweenSoundsSteps;
+	float timerBetweenSoundsSteps;
 	SpriteMap spriteMapIdle;
 	SpriteMap spriteMapRun;
 	float currFrame = 0;
@@ -262,5 +304,6 @@ private:
 	int score;
 	int coins = 0;
 
+	SoundsSteps soundsSteps;
 	list<Bonus> activeBonuses;
 };

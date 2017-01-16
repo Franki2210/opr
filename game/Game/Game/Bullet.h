@@ -2,41 +2,66 @@
 #include "Header.h"
 #include "CalcHelp.h"
 
+struct SoundsBullet
+{
+	Sound *sound1;
+	Sound *sound2;
+	Sound *sound3;
+};
+
 class Bullet
 {
 public:
 	Bullet() = default;
+	Bullet(Texture & texture)
+	{
+		bulletSprite.setTexture(texture);
+	}
 	~Bullet() = default;
 
 	Sprite bulletSprite;
 	bool arrived = false;
-
-	Bullet(string nameTexture)
-	{
-		if (!bulletTexture.loadFromFile(PATH_TO_TEXTURES + nameTexture + ".png"))
-		{
-			cout << "Сорян, не загрузилась: " << nameTexture << endl;
-		}
-		bulletSprite.setTexture(bulletTexture);
-	}
 
 	Vector2f GetPosition()
 	{
 		return pos;
 	}
 
-	void SetTexture(string nameTexture)
+	void SetTexture(Texture & texture)
 	{
-		if (!bulletTexture.loadFromFile(PATH_TO_TEXTURES + nameTexture + ".png"))
-		{
-			cout << "Сорян, не загрузилась: " << nameTexture << endl;
-		}
-		bulletSprite.setTexture(bulletTexture);
+		bulletSprite.setTexture(texture);
 	}
 
 	void SetSpeed(float speed_)
 	{
 		speed = speed_;
+	}
+
+	void SetSounds(Sound *sound1, Sound *sound2, Sound *sound3)
+	{
+		soundsBullet.sound1 = sound1;
+		soundsBullet.sound2 = sound2;
+		soundsBullet.sound3 = sound3;
+	}
+	void SetVolumeSounds(float volume)
+	{
+		soundsBullet.sound1->setVolume(volume);
+		soundsBullet.sound2->setVolume(volume);
+		soundsBullet.sound3->setVolume(volume);
+	}
+	float GetVolumeSounds()
+	{
+		return soundsBullet.sound1->getVolume();
+	}
+    Sound *GetSound()
+	{
+		int randSound = rand() % 3;
+		switch (randSound) 
+		{
+		case 0: return soundsBullet.sound1;
+		case 1: return soundsBullet.sound2;
+		case 2: return soundsBullet.sound3;
+		}
 	}
 
 	void SetDamage(float damage_)
@@ -95,5 +120,5 @@ private:
 	float distance = 0;
 	float damage = 5;
 
-	Texture bulletTexture;
+	SoundsBullet soundsBullet;
 };

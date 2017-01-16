@@ -58,6 +58,10 @@ public:
 		else currHp += value;
 		hpSprite.setTextureRect(IntRect(0, 0, (int)(currHp / maxHp * 50), 10));
 	}
+	void SetCurrentHp(float hp)
+	{
+		currHp = hp;
+	}
 	float GetCurrentHp()
 	{
 		return currHp;

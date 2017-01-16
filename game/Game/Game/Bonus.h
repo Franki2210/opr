@@ -23,6 +23,7 @@ public:
 	{
 		name = name_;
 		sprite.setTexture(texture);
+		sprite.setOrigin(sprite.getGlobalBounds().width / 2.0f, sprite.getGlobalBounds().height / 2.0f);
 		value = value_;
 		timeToDestroy = timeToDestroy_;
 		timerToDestroy = timeToDestroy;
@@ -52,6 +53,7 @@ public:
 	void SetScale(float x, float y)
 	{
 		sprite.setScale(x, y);
+		sprite.setOrigin(sprite.getGlobalBounds().width / 2.0f, sprite.getGlobalBounds().height / 2.0f);
 	}
 
 	float GetValue()
