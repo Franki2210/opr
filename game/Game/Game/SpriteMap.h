@@ -33,14 +33,6 @@ public:
 		int lineFrame = frame / columns;
 		int columnFrame = frame % columns;
 		sprite.setTextureRect(IntRect((int)tileSize.x * columnFrame, (int)tileSize.y * lineFrame, (int)tileSize.x, (int)tileSize.y));
-		if (lineFrame == lines && columnFrame == columns)
-		{
-			isEndSpriteMap = true;
-		}
-		else
-		{
-			isEndSpriteMap = false;
-		}
 	}
 	void SetFrame(Direction direction, float frame)
 	{
@@ -87,11 +79,6 @@ public:
 	Vector2i GetTileSize()
 	{
 		return tileSize;
-	}
-
-	bool GetIsEndSpriteMap()
-	{
-		return isEndSpriteMap;
 	}
 
 	void SetPosition(Vector2f position)

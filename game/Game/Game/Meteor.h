@@ -82,6 +82,7 @@ public:
 		currPosition += moveVector * speed * time;
 		sprite.setPosition(currPosition);
 		spriteShadow.setPosition(currPosition.x, arrivalPosition.y);
+		spritePointArrival.setPosition(arrivalPosition);
 
 		if (currPosition.x <= arrivalPosition.x + 10 && currPosition.x >= arrivalPosition.x - 10 && 
 			currPosition.y <= arrivalPosition.y + 10 && currPosition.y >= arrivalPosition.y - 10)

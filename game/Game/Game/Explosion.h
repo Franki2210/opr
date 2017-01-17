@@ -38,7 +38,7 @@ public:
 	{
 		currFrame += speedAnimation * time;
 		spriteMap.SetFrame((int)currFrame);
-		if (spriteMap.GetIsEndSpriteMap())
+		if (currFrame >= spriteMap.GetColumns() * spriteMap.GetLines())
 		{
 			isDestroy = true;
 		}

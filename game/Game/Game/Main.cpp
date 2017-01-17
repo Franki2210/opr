@@ -94,6 +94,194 @@ private:
 	bool isActive = false;
 	Sprite sprite;
 };
+class ToxicCloud
+{
+public:
+	ToxicCloud() = default;
+	~ToxicCloud() = default;
+
+	void SetToxicCloud(Texture & texture, int columnsInMap, int linesInMap)
+	{
+		spriteMap.SetSpriteMap(texture, columnsInMap, linesInMap);
+	}
+
+	void SetPosition(Vector2f pos)
+	{
+		position = pos;
+		spriteMap.sprite.setPosition(position);
+	}
+	void SetPosition(float x, float y)
+	{
+		position = Vector2f(x, y);
+		spriteMap.sprite.setPosition(position);
+	}
+	Vector2f GetPosition()
+	{
+		return position;
+	}
+
+	void SetSpeedAnimation(float value)
+	{
+		speedAnimation = value;
+	}
+
+	FloatRect GetGlobalBounds()
+	{
+		return spriteMap.sprite.getGlobalBounds();
+	}
+
+	void SetTimeToDestroy(float value)
+	{
+		timeToDestroy = value;
+		timerToDestroy = timeToDestroy;
+	}
+
+	void SetSpeedDamage(float value)
+	{
+		speedDamage = value;
+	}
+	float GetSpeedDamage()
+	{
+		return speedDamage;
+	}
+
+	void SetDamage(float value)
+	{
+		damage = value;
+	}
+	float GetDamage()
+	{
+		return damage;
+	}
+
+	bool GetIsDestroy()
+	{
+		return isDestroy;
+	}
+
+	void Update(float & time)
+	{
+		if (timerToDestroy > 0)
+		{
+			timerToDestroy -= time;
+			currFrame += speedAnimation * time;
+			if (currFrame >= spriteMap.GetColumns() * spriteMap.GetLines())
+			{
+				currFrame = 0;
+			}
+			spriteMap.SetFrame((int)currFrame);
+			if (timerToDestroy < timeToDestroy && timerToDestroy > timeToDestroy - 1000.0f)
+			{
+				currAlpha += 0.26f * time;
+				if (currAlpha >= 255) currAlpha = 255;
+				spriteMap.sprite.setColor(Color(255, 255, 255, (Uint8)currAlpha));
+			}
+			if (timerToDestroy < 2000)
+			{
+				currAlpha -= 0.13f * time;
+				if (currAlpha <= 0) currAlpha = 0;
+				spriteMap.sprite.setColor(Color(255, 255, 255, (Uint8)currAlpha));
+			}
+		}
+		else 
+		{ 
+			isDestroy = true; 
+		}
+	}
+
+	void Draw(RenderWindow & window)
+	{
+		window.draw(spriteMap.sprite);
+	}
+
+private:
+	Vector2f position;
+	float timeToDestroy = 10000;
+	float timerToDestroy = timeToDestroy;
+	bool isDestroy = false;
+	SpriteMap spriteMap;
+	float speedAnimation = 1;
+	float currFrame = 1;
+	float speedDamage = 0;
+	float damage = 0;
+	float currAlpha = 0;
+};
+class EnemyExplosion
+{
+public:
+	EnemyExplosion() = default;
+	~EnemyExplosion() = default;
+
+	void SetEnemyExplosion(Texture & texture, int columnsInMap, int linesInMap)
+	{
+		spriteMap.SetSpriteMap(texture, columnsInMap, linesInMap);
+	}
+
+	void SetSpeedAnimation(float value)
+	{
+		speedAnimation = value;
+	}
+
+	void SetTimeToDestroy(float value)
+	{
+		timeToDestroy = value;
+		timerToDestroy = timeToDestroy;
+	}
+
+	void SetPosition(Vector2f pos)
+	{
+		position = pos;
+		spriteMap.sprite.setPosition(position);
+	}
+	void SetPosition(float x, float y)
+	{
+		position = Vector2f(x, y);
+		spriteMap.sprite.setPosition(position);
+	}
+	Vector2f GetPosition()
+	{
+		return position;
+	}
+
+	bool GetIsDestroy()
+	{
+		return isDestroy;
+	}
+
+	void Update(float time)
+	{
+		if (timerToDestroy > 0)
+		{
+			timerToDestroy -= time;
+			if (currFrame < spriteMap.GetColumns() * spriteMap.GetLines())
+			{
+				spriteMap.SetFrame((int)currFrame);
+				currFrame += speedAnimation * time;
+			}
+			if (timerToDestroy < 2000)
+			{
+				currAlpha -= 0.13f * time;
+				if (currAlpha <= 0) currAlpha = 0;
+				spriteMap.sprite.setColor(Color(255, 255, 255, (Uint8)currAlpha));
+			}
+		}
+		else isDestroy = true;
+	}
+
+	void Draw(RenderWindow & window)
+	{
+		window.draw(spriteMap.sprite);
+	}
+private:
+	float timeToDestroy = 4000;
+	float timerToDestroy = timeToDestroy;
+	float currFrame = 0;
+	float currAlpha = 255;
+	SpriteMap spriteMap;
+	Vector2f position;
+	bool isDestroy = false;
+	float speedAnimation = 0.14f;
+};
 
 class Icon
 {
@@ -208,6 +396,8 @@ struct Textures
 	Texture map;
 	Texture explosion;
 	Texture vignette;
+	Texture toxicCloud;
+	Texture enemyExplosion;
 };
 
 struct Obstacles
@@ -273,6 +463,8 @@ struct UsedEntities
 	ChangeHpView changeHpView;
 	Meteor meteor;
 	Explosion explosion;
+	ToxicCloud toxicCloud;
+	EnemyExplosion enemyExplosion;
 };
 
 struct Entities
@@ -288,6 +480,8 @@ struct Entities
 	list<ChangeHpView*> changeHpViews;
 	list<Meteor*> meteors;
 	list<Explosion*> explosions;
+	list<ToxicCloud*> toxicClouds;
+	list<EnemyExplosion*> enemyExplosions;
 };
 
 struct UsedTextsTowersPrice
@@ -407,6 +601,20 @@ void SpawnExplosion(list<Explosion*> & explosions, Explosion & explosion, Camera
 	}	
 	explosions.push_back(newExplosion);
 }
+void SpawnToxicCloud(list<ToxicCloud*> & toxicClouds, ToxicCloud & toxicCloud, Vector2f position)
+{
+	ToxicCloud *newToxicCloud = new ToxicCloud;
+	*newToxicCloud = toxicCloud;
+	newToxicCloud->SetPosition(position);
+	toxicClouds.push_back(newToxicCloud);
+}
+void SpawnEnemieExplosion(list<EnemyExplosion*> & enemieExplosions, EnemyExplosion & enemyExplosion, Vector2f position)
+{
+	EnemyExplosion *newEnemyExplosion = new EnemyExplosion;
+	*newEnemyExplosion = enemyExplosion;
+	newEnemyExplosion->SetPosition(position);
+	enemieExplosions.push_back(newEnemyExplosion);
+}
 
 void PlayerShot(Entities & entities, Vector2f mousePos)
 {
@@ -524,7 +732,7 @@ void TowerUpdateAndDraw(Entities & entities, Tower *placingTower, bool & towerIn
 		}
 	}
 }
-void EnemiesUpdateAndDraw(Entities & entities, UsedBonuses & bonuses, Coin & coin, RenderWindow & window, float & time)
+void EnemiesUpdateAndDraw(Entities & entities, UsedEntities & usedEntities, Coin & coin, RenderWindow & window, float & time)
 {
 	for (auto itEnemy = entities.enemies.begin(); itEnemy != entities.enemies.end();)
 	{
@@ -535,7 +743,12 @@ void EnemiesUpdateAndDraw(Entities & entities, UsedBonuses & bonuses, Coin & coi
 			//TODO: Звук смерти врага
 			SpawnCoin(entities.coins, coin, enemy->GetCoins(), itPosition);
 			entities.player.AddCoins(enemy->GetCoins());
-			SpawnBonus(entities.bonuses, bonuses, itPosition);
+			SpawnBonus(entities.bonuses, usedEntities.bonuses, itPosition);
+			SpawnEnemieExplosion(entities.enemyExplosions, usedEntities.enemyExplosion, itPosition);
+			if (rand()%100 <= 80)
+			{
+				SpawnToxicCloud(entities.toxicClouds, usedEntities.toxicCloud, itPosition);
+			}
 
 			itEnemy = entities.enemies.erase(itEnemy);
 			delete(enemy);
@@ -766,7 +979,7 @@ void MeteorsUpdateAndDraw(Entities & entities, UsedEntities & usedEntities, Came
 		else
 		{
 			meteor->Draw(window);
-			itMeteor++;
+			++itMeteor;
 		}
 	}
 }
@@ -785,6 +998,46 @@ void ExplosionsUpdateAndDraw(list<Explosion*> & explosions, RenderWindow & windo
 		{
 			explosion->Draw(window);
 			it++;
+		}
+	}
+}
+void ToxicCloudUpdateAndDraw(Entities & entities, RenderWindow & window, float & time)
+{
+	for (auto it = entities.toxicClouds.begin(); it != entities.toxicClouds.end();)
+	{
+		ToxicCloud *toxicCloud = *it;
+		toxicCloud->Update(time);
+		if (toxicCloud->GetIsDestroy())
+		{
+			it = entities.toxicClouds.erase(it);
+			delete(toxicCloud);
+		}
+		else
+		{
+			if (toxicCloud->GetGlobalBounds().contains(entities.player.GetPosition()))
+			{
+				entities.player.TakeDamage(toxicCloud->GetDamage() * time/1000.0f);
+			}
+			toxicCloud->Draw(window);
+			++it;
+		}
+	}
+}
+void EnemyExplosionUpdateAndDraw(list<EnemyExplosion*> & enemyExplosions, RenderWindow & window, float & time)
+{
+	for (auto it = enemyExplosions.begin(); it != enemyExplosions.end();)
+	{
+		EnemyExplosion *enemyExplosion = *it;
+		enemyExplosion->Update(time);
+		if (enemyExplosion->GetIsDestroy())
+		{
+			it = enemyExplosions.erase(it);
+			delete(enemyExplosion);
+		}
+		else
+		{
+			enemyExplosion->Draw(window);
+			++it;
 		}
 	}
 }
@@ -916,7 +1169,7 @@ void InitPlayer(Player & player, Textures & textures, Bullet & bullet, UsedSound
 void InitAreasPlacingTower(AreasPlacingTower & areasPlacing)
 {
 	areasPlacing.placingArea.setRadius(150);
-	Color placeAreaColor(0, 100, 200, 30);
+	Color placeAreaColor(0, 100, 200, 60);
 	areasPlacing.placingArea.setFillColor(placeAreaColor);
 	areasPlacing.placingArea.setOrigin(areasPlacing.placingArea.getRadius(), areasPlacing.placingArea.getRadius());
 
@@ -1022,6 +1275,21 @@ void InitVignette(Vignette & vignette, Textures & textures)
 	textures.vignette.loadFromFile(PATH_TO_TEXTURES + "vignette.png");
 	vignette.SetTexture(textures.vignette);
 }
+void InitToxicCloud(ToxicCloud & toxicCloud, Textures & textures)
+{
+	textures.toxicCloud.loadFromFile(PATH_TO_TEXTURES + "toxic_cloud.png");
+	toxicCloud.SetToxicCloud(textures.toxicCloud, 5, 12);
+	toxicCloud.SetTimeToDestroy(7000.0f);
+	toxicCloud.SetDamage(5.0f);
+	toxicCloud.SetSpeedAnimation(0.01f);
+}
+void InitEnemyExplosion(EnemyExplosion & enemyExplosion, Textures & textures)
+{
+	textures.enemyExplosion.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy_explosion.png");
+	enemyExplosion.SetEnemyExplosion(textures.enemyExplosion, 5, 4);
+	enemyExplosion.SetSpeedAnimation(0.02f);
+	enemyExplosion.SetTimeToDestroy(20000.0f);
+}
 
 void InitMusics(Music & music, Music & winMusic, Music & loseMusic, Music & menuMusic)
 {
@@ -1123,6 +1391,8 @@ int main()
 	InitMeteor(usedEntities.meteor, textures, usedSounds);
 	InitExplosion(usedEntities.explosion, textures, usedSounds);
 	InitCameraShake(cameraShake);
+	InitToxicCloud(usedEntities.toxicCloud, textures);
+	InitEnemyExplosion(usedEntities.enemyExplosion, textures);
 
 	InitChangeHpView(usedEntities.changeHpView, font);
 
@@ -1143,7 +1413,8 @@ int main()
 	vector<int> mapUsedEnemies = {1,1,2,2,1,3,3,1,1,1,1,1,1,1,1,2,3,2,1,2,3,2,1,2,2,2,1,2,3,3,
 								  3,2,1,2,2,3,3,2,2,2,2,3,3,2,2,2,2,1,2,2,2,1,1,1,1,1,1,1,1,1,
 								  1,2,2,2,2,2,2,3,3,3,3,3,3,2,2,2,2,1,3,1,1,1,1,1,1,1,1,1,1,3,
-								  1,1,3,3,3,3,1,1,1,3,3,3,2,2,2,3,2,1,1,1,2,3,2,3,3,3,2,2,3,3};
+								  1,1,3,3,3,3,1,1,1,3,3,3,2,2,2,3,2,1,1,1,2,3,2,3,3,3,2,2,3,3,
+								  2,2,2,2,1,1,1,2,2,2,2,3,3,3,3,2,2,1,1,1,1,1,2,3,3,3,3,3,3,3};
 
 	vector<Enemy*> enemiesInLevel;
 	enemiesInLevel.reserve(mapUsedEnemies.size());
@@ -1181,7 +1452,7 @@ int main()
 		float time = (float)clock.getElapsedTime().asMicroseconds();
 		clock.restart();
 		time /= 1000;
-		fps.printFPS(time);
+		//fps.printFPS(time);
 
 		Event event;
 
@@ -1270,11 +1541,10 @@ int main()
 				Meteor* newMeteor = new Meteor;
 				*newMeteor = usedEntities.meteor;
 				newMeteor->SetArrivalPosition(float(rand() % 2000), float(rand() % 2000));
-				//newMeteor->SetArrivalPosition(entities.player.GetPosition());
 				entities.meteors.push_back(newMeteor);
 			}
 
-			if (rand()%10000 < 1)
+			if (rand()%10000 == 0)
 			{
 				usedSounds.evilLaugh.sound.play();
 			}
@@ -1283,13 +1553,15 @@ int main()
 
 			window.draw(mapSprite);
 
+			EnemyExplosionUpdateAndDraw(entities.enemyExplosions, window, time);
 			PortalUpdateAndDraw(entities, window, time);
 			MeteorsUpdateAndDraw(entities, usedEntities, cameraShake, window, time);
+			ToxicCloudUpdateAndDraw(entities, window, time);
 			ExplosionsUpdateAndDraw(entities.explosions, window, time);
 			BonusesUpdateAndDraw(entities, usedSounds, window, time);
 			TowerUpdateAndDraw(entities, placingTower, towerInstallation, intersectAtPlacing, drawActionArea, time, window);
 			BulletUpdateAndDraw(entities, usedEntities, window, time);
-			EnemiesUpdateAndDraw(entities, usedEntities.bonuses, coin, window, time);
+			EnemiesUpdateAndDraw(entities, usedEntities, coin, window, time);
 			ChangeHpViewsUpdateAndDraw(entities, window, time);
 
 			if (Mouse::isButtonPressed(Mouse::Left) && !towerInstallation && entities.player.canShot)
@@ -1396,6 +1668,7 @@ int main()
 		}
 		if (gameState == state::lose)
 		{
+			usedSounds.heartbeat.sound.stop();
 			Lose(loseMusic, gameState, view, window);
 			clock.restart();
 		}

@@ -61,6 +61,7 @@ public:
 		case 0: return soundsBullet.sound1;
 		case 1: return soundsBullet.sound2;
 		case 2: return soundsBullet.sound3;
+		default: return soundsBullet.sound1;
 		}
 	}
 
