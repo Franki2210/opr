@@ -9,23 +9,28 @@ public:
 	Portal() = default;
 	~Portal() = default;
 
-	void SetSpriteMap(Texture & texture, int numColumns, int numLines)
+	void SetSpriteMap(Texture & texture, const int numColumns, const int numLines)
 	{
 		spriteMap.SetSpriteMap(texture, numColumns, numLines);
 	}
 
-	void SetPosition(float x, float y)
+	void SetSpeedAnimation(const float value)
+	{
+		speedAnimation = value;
+	}
+
+	void SetPosition(const float x, const float y)
 	{
 		spriteMap.SetPosition(x, y);
 	}
-	void SetPosition(Vector2f pos)
+	void SetPosition(const Vector2f pos)
 	{
 		spriteMap.SetPosition(pos);
 	}
 
-	void Update(float time)
+	void Update(const float time)
 	{
-		currFrame += 0.01f * time;
+		currFrame += speedAnimation * time;
 		if (currFrame > spriteMap.GetColumns()) currFrame = 0;
 		spriteMap.SetFrame((int)currFrame);
 	}
@@ -38,4 +43,5 @@ public:
 private:
 	SpriteMap spriteMap;
 	float currFrame = 0;
+	float speedAnimation = 0;
 };

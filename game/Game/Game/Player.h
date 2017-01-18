@@ -19,22 +19,23 @@ public:
 	bool canShot = false;
 
 	Player() = default;
-	Player(Texture texIdle, int colIdle, int lineIdle,
-		Texture texRun, int colRun, int lineRun)
+	Player(Texture texIdle, const  int colIdle, const int lineIdle,
+		   Texture texRun, const int colRun, const int lineRun)
 	{
 		spriteMapIdle.SetSpriteMap(texIdle, colIdle, lineIdle);
 		spriteMapRun.SetSpriteMap(texRun, colRun, lineRun);
 	}
 	~Player() = default;
 
-	void SetSpriteMaps(Texture & texIdle, int colIdle, int lineIdle,
-		Texture & texRun, int colRun, int lineRun)
+	void SetSpriteMaps(Texture & texIdle, const int colIdle, const int lineIdle,
+					   Texture & texRun, const int colRun, const int lineRun)
 	{
 		spriteMapIdle.SetSpriteMap(texIdle, colIdle, lineIdle);
 		spriteMapRun.SetSpriteMap(texRun, colRun, lineRun);
 	}
 
-	void SetSoundSteps(SoundBuffer & soundBuf1, SoundBuffer & soundBuf2, SoundBuffer & soundBuf3, SoundBuffer & soundBuf4, float timeBetweenSounds, float volume)
+	void SetSoundSteps(const SoundBuffer & soundBuf1, const SoundBuffer & soundBuf2, const SoundBuffer & soundBuf3, const SoundBuffer & soundBuf4, 
+						const float timeBetweenSounds, const float volume)
 	{
 		soundsSteps.step1.setBuffer(soundBuf1);
 		soundsSteps.step2.setBuffer(soundBuf2);
@@ -50,11 +51,6 @@ public:
 		timerBetweenSoundsSteps = timeBetweenSoundsSteps;
 	}
 
-	//Препятствие для игрока
-	void SetObstacle(FloatRect obstacle_)
-	{
-		obstacle = obstacle_;
-	}
 	FloatRect GetGlobalBounds()
 	{
 		return spriteMapRun.sprite.getGlobalBounds();

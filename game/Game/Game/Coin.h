@@ -10,20 +10,20 @@ public:
 	bool destroy = false;
 
 	Coin() = default;
-	Coin(Texture & texture, int numColumns, int numLines)
+	Coin(Texture & texture, const int numColumns, const int numLines)
 	{
 		spriteMap.SetSpriteMap(texture, numColumns, numLines);
 		spriteMap.sprite.setScale(0.3f, 0.3f);
 	}
 	~Coin() = default;
 
-	void SetSpriteMap(Texture & texture, int numColumns, int numLines)
+	void SetSpriteMap(Texture & texture, const int numColumns, const int numLines)
 	{
 		spriteMap.SetSpriteMap(texture, numColumns, numLines);
 		spriteMap.sprite.setScale(0.3f, 0.3f);
 	}
 
-	void SetValue(int value_)
+	void SetValue(const int value_)
 	{
 		value = value_;
 		ostringstream valueString;
@@ -31,23 +31,23 @@ public:
 		text.setString("+" + valueString.str());
 	}
 
-	void SetFont(Font font_)
+	void SetFont(const Font font_)
 	{
 		font = font_;
 		text.setFont(font);
 		text.setCharacterSize(20);
 	}
 
-	void SetPosition(Vector2f pos)
+	void SetPosition(const Vector2f pos)
 	{
 		position = pos;
 	}
 
-	void Update(float & time)
+	void Update(const float time)
 	{
-		if (timerToDisappearance > 0)
+		if (timerToDestroy > 0)
 		{
-			timerToDisappearance -= time;
+			timerToDestroy -= time;
 			currFrame += 0.04f * time;
 			if (currFrame > spriteMap.GetColumns()) currFrame = 0;
 			spriteMap.SetFrame((int)currFrame);
@@ -72,7 +72,7 @@ public:
 	}
 
 private:
-	float timerToDisappearance = 2000;
+	float timerToDestroy = 2000;
 	float currFrame = 0;
 	Vector2f position;
 	float currAlpha = 255;

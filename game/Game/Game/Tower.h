@@ -103,7 +103,7 @@ public:
 		return enemyPos;
 	}
 
-	void Update(float & time, Vector2f posEnemy)
+	void Update(const float time, Vector2f posEnemy)
 	{
 		if (reloadTimer > 0 && !canShot)
 		{

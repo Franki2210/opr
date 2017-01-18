@@ -39,7 +39,7 @@ public:
 		position = Vector2f(position.x + rand() % 10, position.y);
 	}
 
-	void Update(float & time)
+	void Update(const float time)
 	{
 		if (timerToDisappearance > 0)
 		{

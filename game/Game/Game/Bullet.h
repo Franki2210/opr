@@ -15,12 +15,9 @@ public:
 	Bullet() = default;
 	Bullet(Texture & texture)
 	{
-		bulletSprite.setTexture(texture);
+		sprite.setTexture(texture);
 	}
 	~Bullet() = default;
-
-	Sprite bulletSprite;
-	bool arrived = false;
 
 	Vector2f GetPosition()
 	{
@@ -29,7 +26,7 @@ public:
 
 	void SetTexture(Texture & texture)
 	{
-		bulletSprite.setTexture(texture);
+		sprite.setTexture(texture);
 	}
 
 	void SetSpeed(float speed_)
@@ -43,7 +40,7 @@ public:
 		soundsBullet.sound2 = sound2;
 		soundsBullet.sound3 = sound3;
 	}
-	void SetVolumeSounds(float volume)
+	void SetVolumeSounds(const float volume)
 	{
 		soundsBullet.sound1->setVolume(volume);
 		soundsBullet.sound2->setVolume(volume);
@@ -65,7 +62,21 @@ public:
 		}
 	}
 
-	void SetDamage(float damage_)
+	bool GetIsDestroy()
+	{
+		return isDestroy;
+	}
+	void SetIsDestroy(const bool value)
+	{
+		isDestroy = value;
+	}
+
+	void SetScaleSprite(const float x, const float y)
+	{
+		sprite.setScale(x, y);
+	}
+
+	void SetDamage(const float damage_)
 	{
 		damage = damage_;
 	}
@@ -74,17 +85,17 @@ public:
 		return damage;
 	}
 
-	void SetStartPosition(Vector2f pos_)
+	void SetStartPosition(const Vector2f pos_)
 	{
 		pos = pos_;
 	}
 
-	void SetEnemyPos(Vector2f EnemyPos)
+	void SetEnemyPos(const Vector2f EnemyPos)
 	{
 		posEnemy = EnemyPos;
 	}
 
-	void Update(float const &time)
+	void Update(const float time)
 	{
 		dirVector = posEnemy - pos;
 		distance = CalculateDistance(dirVector);
@@ -92,7 +103,7 @@ public:
 		float dX = posEnemy.x - pos.x;
 		float dY = posEnemy.y - pos.y;
 		float angle = (atan2(dY, dX)) * 180 / 3.14159f + 90;
-		bulletSprite.setRotation(angle);
+		sprite.setRotation(angle);
 
 		if (distance > 5)
 		{
@@ -100,15 +111,15 @@ public:
 		}
 		else
 		{
-			arrived = true;
+			isDestroy = true;
 		}
 
-		bulletSprite.setPosition(pos);
+		sprite.setPosition(pos);
 	}
 
 	void Draw(RenderWindow & window)
 	{
-		window.draw(bulletSprite);
+		window.draw(sprite);
 	}
 
 private:
@@ -120,6 +131,9 @@ private:
 	float speed = 1;
 	float distance = 0;
 	float damage = 5;
+
+	Sprite sprite;
+	bool isDestroy = false;
 
 	SoundsBullet soundsBullet;
 };

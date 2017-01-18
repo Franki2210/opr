@@ -43,7 +43,7 @@ public:
 	~Entity() = default;
 
 	//Жизни
-	void SetMaxHp(float maxHp_)
+	void SetMaxHp(const float maxHp_)
 	{
 		maxHp = maxHp_;
 		currHp = maxHp;
@@ -52,13 +52,13 @@ public:
 	{
 		return maxHp;
 	}
-	void AddHp(float value)
+	void AddHp(const float value)
 	{
 		if (currHp + value > maxHp) currHp = maxHp;
 		else currHp += value;
 		hpSprite.setTextureRect(IntRect(0, 0, (int)(currHp / maxHp * 50), 10));
 	}
-	void SetCurrentHp(float hp)
+	void SetCurrentHp(const float hp)
 	{
 		currHp = hp;
 	}
@@ -66,7 +66,7 @@ public:
 	{
 		return currHp;
 	}
-	void SetHpPosition(Vector2f pos)
+	void SetHpPosition(const Vector2f pos)
 	{
 		hpPosition = pos;
 		hpSprite.setPosition(hpPosition);
@@ -74,7 +74,7 @@ public:
 	}
 
 	//Урон
-	void SetDamage(float damage_)
+	void SetDamage(const float damage_)
 	{
 		damage = damage_;
 	}
@@ -83,7 +83,7 @@ public:
 		return damage;
 	}
 	//Принять урон
-	void TakeDamage(float damage_)
+	void TakeDamage(const float damage_)
 	{
 		currHp -= damage_;
 		if (currHp < 0)
@@ -97,12 +97,12 @@ public:
 	}
 
 	//Позиция
-	void SetPosition(Vector2f pos)
+	void SetPosition(const Vector2f pos)
 	{
 		position = pos;
 		SetHpPosition(position);
 	}
-	void SetPosition(float x, float y)
+	void SetPosition(const float x, const float y)
 	{
 		position = Vector2f(x, y);
 		SetHpPosition(position);

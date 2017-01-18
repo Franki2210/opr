@@ -7,7 +7,7 @@ public:
 	Meteor() = default;
 	~Meteor() = default;
 
-	void SetMeteor(Texture & texture, Texture & textureShadow, Texture & textureArrival, float damage_, float speed_)
+	void SetMeteor(Texture & texture, Texture & textureShadow, Texture & textureArrival, const float damage_, const float speed_)
 	{
 		sprite.setTexture(texture);
 		spriteShadow.setTexture(textureShadow);
@@ -27,14 +27,13 @@ public:
 	void SetSounds(Sound *sound_)
 	{
 		sound = sound_;
-
 	}
 	Sound *GetSound()
 	{
 		return sound;
 	}
 
-	void SetArrivalPosition(Vector2f pos)
+	void SetArrivalPosition(const Vector2f pos)
 	{
 		arrivalPosition = pos;
 		startPosition = arrivalPosition - moveVector * 1000.0f;
@@ -44,7 +43,7 @@ public:
 		spriteShadow.setPosition(currPosition.x, arrivalPosition.y);
 		spritePointArrival.setPosition(arrivalPosition);
 	}
-	void SetArrivalPosition(float x, float y)
+	void SetArrivalPosition(const float x, const float y)
 	{
 		arrivalPosition = Vector2f(x, y);
 		startPosition = arrivalPosition - moveVector * 1000.0f;
@@ -63,6 +62,11 @@ public:
 		return currPosition;
 	}
 
+	void SetMoveVector(const Vector2f value)
+	{
+		moveVector = value;
+	}
+
 	FloatRect GetArrivalArea()
 	{
 		return spritePointArrival.getGlobalBounds();
@@ -77,7 +81,7 @@ public:
 		return isArrival;
 	}
 
-	void Update(float time)
+	void Update(const float time)
 	{
 		currPosition += moveVector * speed * time;
 		sprite.setPosition(currPosition);

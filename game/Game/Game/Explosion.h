@@ -8,7 +8,7 @@ public:
 	Explosion() = default;
 	~Explosion() = default;
 
-	void SetExplosion(Texture & texture, int columnsInMap, int linesInMap, float speedAnimation_)
+	void SetExplosion(Texture & texture, const int columnsInMap, const int linesInMap, const float speedAnimation_)
 	{
 		spriteMap.SetSpriteMap(texture, columnsInMap, linesInMap);
 		speedAnimation = speedAnimation_;
@@ -24,7 +24,7 @@ public:
 		return sound;
 	}
 
-	void SetPosition(Vector2f position)
+	void SetPosition(const Vector2f position)
 	{
 		spriteMap.sprite.setPosition(position);
 	}
@@ -34,7 +34,7 @@ public:
 		return isDestroy;
 	}
 
-	void Update(float time)
+	void Update(const float time)
 	{
 		currFrame += speedAnimation * time;
 		spriteMap.SetFrame((int)currFrame);

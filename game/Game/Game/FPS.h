@@ -5,7 +5,7 @@ public:
 	FPS() :timer(0), fps(0) {};
 	~FPS() = default;
 
-	void printFPS(float const &time)
+	void printFPS(const float time)
 	{
 		timer += time;
 		fps++;
