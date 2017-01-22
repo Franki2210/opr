@@ -1,12 +1,14 @@
 #include "Header.h"
 #include "Icon.h"
 
+using namespace sf;
+
 Icon::Icon() = default;
-Icon::Icon(string nameTexture)
+Icon::Icon(std::string nameTexture)
 {
 	if (!texture.loadFromFile(PATH_TO_TEXTURES + nameTexture + ".png"))
 	{
-		cout << "Сорян, не загрузилась: " << nameTexture << endl;
+		std::cout << "Сорян, не загрузилась: " << nameTexture << std::endl;
 	}
 	sprite.setTexture(texture);
 	sprite.setOrigin(sprite.getLocalBounds().width / 2, sprite.getLocalBounds().height / 2);
@@ -14,11 +16,11 @@ Icon::Icon(string nameTexture)
 }
 Icon::~Icon() = default;
 
-void Icon::SetSprite(string nameTexture)
+void Icon::SetSprite(std::string nameTexture)
 {
 	if (!texture.loadFromFile(PATH_TO_TEXTURES + nameTexture + ".png"))
 	{
-		cout << "Сорян, не загрузилась: " << nameTexture << endl;
+		std::cout << "Сорян, не загрузилась: " << nameTexture << std::endl;
 	}
 	sprite.setTexture(texture);
 	sprite.setOrigin(sprite.getLocalBounds().width / 2, sprite.getLocalBounds().height / 2);

@@ -10,7 +10,7 @@ class Enemy : public Entity
 public:
 	SpriteMap spriteMapRun;
 	SpriteMap spriteMapAttack;
-	CircleShape damageArea;
+	sf::CircleShape damageArea;
 
 	Tower *tower = nullptr;
 	Player *player = nullptr;
@@ -18,12 +18,12 @@ public:
 	bool isActive = true;
 
 	Enemy();
-	Enemy(Texture & texture, const int columnInMap, const int lineInMap);
+	Enemy(sf::Texture & texture, const int columnInMap, const int lineInMap);
 	~Enemy();
 
 	//Текстурки движения и атаки
-	void SetTextureRun(Texture & texture, const int columnInMap, const int lineInMap);
-	void SetTextureAttack(Texture & texture, const int columnInMap, const int lineInMap);
+	void SetTextureRun(sf::Texture & texture, const int columnInMap, const int lineInMap);
+	void SetTextureAttack(sf::Texture & texture, const int columnInMap, const int lineInMap);
 
 	void SetSpeedRunAnimation(const float speedAnimation);
 	void SetSpeedAttackAnimation(const float speedAnimation);
@@ -39,21 +39,21 @@ public:
 	Tower *GetNearTower();
 
 	//Сколько монеток выпадет
-	void SetCoins(const int coins_);
+	void SetCoins(const int coinsEnenmy);
 	int GetCoins();
 	
 	//Скорость
-	void SetSpeed(const float speed_);
+	void SetSpeed(const float speedEnemy);
 
 	void Update(const float time);
-	void Draw(RenderWindow & window);
+	void Draw(sf::RenderWindow & window);
 
 private:
-	Vector2f moveVector;
+	sf::Vector2f moveVector;
 	float speed = 0.2f;
 	float attackDelay = 1000.0f; // = /1000 секунд
 	float attackTimer = 0;
-	Vector2f posAttackTarget;
+	sf::Vector2f posAttackTarget;
 	bool attack = false;
 	float currFrame = 1;
 	int lineInSpriteMap = 0;

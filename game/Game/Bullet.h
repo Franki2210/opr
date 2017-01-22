@@ -2,28 +2,28 @@
 #include "Header.h"
 struct SoundsBullet
 {
-	Sound *sound1;
-	Sound *sound2;
-	Sound *sound3;
+	sf::Sound sound1;
+	sf::Sound sound2;
+	sf::Sound sound3;
 };
 
 class Bullet
 {
 public:
 	Bullet() = default;
-	Bullet(Texture & texture);
+	Bullet(sf::Texture & texture);
 	~Bullet() = default;
 
-	Vector2f GetPosition();
+	sf::Vector2f GetPosition();
 
-	void SetTexture(Texture & texture);
+	void SetTexture(sf::Texture & texture);
 
 	void SetSpeed(const float speed);
 
-	void SetSounds(Sound *sound1, Sound *sound2, Sound *sound3);
+	void SetSounds(sf::Sound & sound1, sf::Sound & sound2, sf::Sound & sound3);
 	void SetVolumeSounds(const float volume);
 	float GetVolumeSounds();
-	Sound *GetSound();
+	sf::Sound &GetSound();
 
 	bool GetIsDestroy();
 	void SetIsDestroy(const bool value);
@@ -33,25 +33,25 @@ public:
 	void SetDamage(const float damage);
 	float GetDamage();
 
-	void SetStartPosition(const Vector2f pos_);
+	void SetStartPosition(const sf::Vector2f startPosition);
 
-	void SetEnemyPos(const Vector2f EnemyPos);
+	void SetEnemyPos(const sf::Vector2f EnemyPos);
 
 	void Update(const float time);
 
-	void Draw(RenderWindow & window);
+	void Draw(sf::RenderWindow & window);
 
 private:
-	Vector2f position = Vector2f(0, 0);
-	Vector2f positionEnemy = Vector2f(0, 0);
-	Vector2f dirVector = Vector2f(0, 0);
-	Vector2f direction = Vector2f(0, 0);
+	sf::Vector2f position = sf::Vector2f(0, 0);
+	sf::Vector2f positionEnemy = sf::Vector2f(0, 0);
+	sf::Vector2f dirVector = sf::Vector2f(0, 0);
+	sf::Vector2f direction = sf::Vector2f(0, 0);
 
 	float speed = 1;
 	float distance = 0;
 	float damage = 5;
 
-	Sprite sprite;
+	sf::Sprite sprite;
 	bool isDestroy = false;
 
 	SoundsBullet soundsBullet;

@@ -2,6 +2,8 @@
 #include "SpriteMap.h"
 #include "ToxicCloud.h"
 
+using namespace sf;
+
 ToxicCloud::ToxicCloud() = default;
 ToxicCloud::~ToxicCloud() = default;
 

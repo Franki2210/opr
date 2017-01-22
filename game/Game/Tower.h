@@ -15,18 +15,18 @@ public:
 	float reloadTime = 500; // = reloadTime / 1000 секунд
 	float reloadTimer = reloadTime;
 
-	CircleShape actionArea;
-	CircleShape boundsArea;
+	sf::CircleShape actionArea;
+	sf::CircleShape boundsArea;
 
 	Tower();
 	~Tower();
-	Tower(Texture & texture, int column, int line);
+	Tower(sf::Texture & texture, int column, int line);
 
-	void SetSpriteMap(Texture & texture, int column, int line);
+	void SetSpriteMap(sf::Texture & texture, int column, int line);
 
-	void SetActionRadius(float radius);
+	void SetActionRadius(const float radius);
 
-	int GetNumFrameFromDirection(Vector2f posEnemy);
+	int GetNumFrameFromDirection(sf::Vector2f posEnemy);
 
 	void SetBullet(Bullet usedBullet);
 	Bullet GetBullet();
@@ -36,14 +36,14 @@ public:
 	void SetPrice(int value);
 	int GetPrice();
 
-	Vector2f GetEnemyPos();
+	sf::Vector2f GetEnemyPos();
 
-	void Update(const float time, Vector2f posEnemy);
+	void Update(const float time, sf::Vector2f posEnemy);
 	void Update();
-	void Draw(RenderWindow & window);
+	void Draw(sf::RenderWindow & window);
 
 private:
 	float currFrame = 0;
-	Vector2f enemyPos;
-	int price;
+	sf::Vector2f enemyPos;
+	int price = 0;
 };

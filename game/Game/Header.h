@@ -12,12 +12,11 @@
 #include <sstream>
 #include <random>
 
-using namespace sf;
-using namespace std;
+//TODO: убрать using namespace...
 
-const string PATH_TO_TEXTURES = "recources/textures/";
-const string PATH_TO_MUSIC = "recources/music/";
-const string PATH_TO_SOUNDS = "recources/sounds/";
-const string PATH_TO_FONTS = "recources/fonts/";
+static const std::string PATH_TO_TEXTURES = "recources/textures/";
+static const std::string PATH_TO_MUSIC = "recources/music/";
+static const std::string PATH_TO_SOUNDS = "recources/sounds/";
+static const std::string PATH_TO_FONTS = "recources/fonts/";
 enum Direction { Up = 0, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft };
 enum state { menu, game, lose, win };

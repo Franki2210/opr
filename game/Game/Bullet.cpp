@@ -2,6 +2,8 @@
 #include "Bullet.h"
 #include "CalcHelp.h"
 
+using namespace sf;
+
 Bullet::Bullet(Texture & texture)
 {
 	sprite.setTexture(texture);
@@ -22,7 +24,7 @@ void Bullet::SetSpeed(const float speed)
 	this->speed = speed;
 }
 
-void Bullet::SetSounds(Sound *sound1, Sound *sound2, Sound *sound3)
+void Bullet::SetSounds(Sound & sound1, Sound & sound2, Sound & sound3)
 {
 	soundsBullet.sound1 = sound1;
 	soundsBullet.sound2 = sound2;
@@ -30,15 +32,15 @@ void Bullet::SetSounds(Sound *sound1, Sound *sound2, Sound *sound3)
 }
 void Bullet::SetVolumeSounds(const float volume)
 {
-	soundsBullet.sound1->setVolume(volume);
-	soundsBullet.sound2->setVolume(volume);
-	soundsBullet.sound3->setVolume(volume);
+	soundsBullet.sound1.setVolume(volume);
+	soundsBullet.sound2.setVolume(volume);
+	soundsBullet.sound3.setVolume(volume);
 }
 float Bullet::GetVolumeSounds()
 {
-	return soundsBullet.sound1->getVolume();
+	return soundsBullet.sound1.getVolume();
 }
-Sound *Bullet::GetSound()
+Sound &Bullet::GetSound()
 {
 	int randSound = rand() % 3;
 	switch (randSound)
@@ -73,9 +75,9 @@ float Bullet::GetDamage()
 	return damage;
 }
 
-void Bullet::SetStartPosition(const Vector2f position)
+void Bullet::SetStartPosition(const Vector2f startPosition)
 {
-	this->position = position;
+	position = startPosition;
 }
 
 void Bullet::SetEnemyPos(const Vector2f EnemyPosition)

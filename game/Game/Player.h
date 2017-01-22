@@ -6,10 +6,10 @@
 
 struct SoundsSteps
 {
-	Sound step1;
-	Sound step2;
-	Sound step3;
-	Sound step4;
+	sf::Sound step1;
+	sf::Sound step2;
+	sf::Sound step3;
+	sf::Sound step4;
 };
 
 class Player : public Entity
@@ -19,21 +19,21 @@ public:
 	bool canShot = false;
 
 	Player();
-	Player(Texture texIdle, const  int colIdle, const int lineIdle,
-		Texture texRun, const int colRun, const int lineRun);
+	Player(sf::Texture texIdle, const  int colIdle, const int lineIdle,
+		sf::Texture texRun, const int colRun, const int lineRun);
 	~Player();
 
-	void SetSpriteMaps(Texture & texIdle, const int colIdle, const int lineIdle,
-		Texture & texRun, const int colRun, const int lineRun);
+	void SetSpriteMaps(sf::Texture & texIdle, const int colIdle, const int lineIdle,
+		sf::Texture & texRun, const int colRun, const int lineRun);
 
-	void SetSoundSteps(const SoundBuffer & soundBuf1, const SoundBuffer & soundBuf2, const SoundBuffer & soundBuf3, const SoundBuffer & soundBuf4,
+	void SetSoundSteps(const sf::SoundBuffer & soundBuf1, const sf::SoundBuffer & soundBuf2, const sf::SoundBuffer & soundBuf3, const sf::SoundBuffer & soundBuf4,
 		const float timeBetweenSounds, const float volume);
 
-	FloatRect GetGlobalBounds();
+	sf::FloatRect GetGlobalBounds();
 
 	//Направление движения
 	Direction DirectionFromKey();
-	Vector2f MoveFromDirection(float const &time);
+	sf::Vector2f MoveFromDirection(float const &time);
 
 	//Пули
 	void SetBullet(Bullet usedBullet);
@@ -53,14 +53,13 @@ public:
 
 	void Update(float const & time);
 
-	void Draw(RenderWindow & window);
+	void Draw(sf::RenderWindow & window);
 private:
 	float speed;
 	Direction direction = Direction::Up;
-	FloatRect obstacle;
+	sf::FloatRect obstacle;
 	Bullet bullet;
-	float reloadTime;
-	float reloadTimer;
+	//увести в таймер
 	float timeBetweenShots = 150;
 	float timerBetweenShots = timeBetweenShots;
 	float timeBetweenSoundsSteps;
@@ -73,5 +72,5 @@ private:
 	int coins = 0;
 
 	SoundsSteps soundsSteps;
-	list<Bonus> activeBonuses;
+	std::list<Bonus> activeBonuses;
 };

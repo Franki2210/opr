@@ -6,13 +6,13 @@ public:
 	Vignette();
 	~Vignette();
 
-	void SetTexture(Texture & texture);
+	void SetTexture(sf::Texture & texture);
 
 	void SetActive(bool value);
 	bool GetActive();
 
-	void Draw(RenderWindow & window);
+	void Draw(sf::RenderWindow & window);
 private:
 	bool isActive = false;
-	Sprite sprite;
+	sf::Sprite sprite;
 };

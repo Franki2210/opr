@@ -6,28 +6,30 @@ public:
 	EnemyRemnants();
 	~EnemyRemnants();
 
-	void SetEnemyExplosion(Texture & texture, int columnsInMap, int linesInMap);
+	void SetEnemyExplosion(sf::Texture & texture, int columnsInMap, int linesInMap);
 
 	void SetSpeedAnimation(float value);
 
 	void SetTimeToDestroy(float value);
 
-	void SetPosition(Vector2f pos);
+	void SetRandomRotate();
+
+	void SetPosition(sf::Vector2f pos);
 	void SetPosition(float x, float y);
-	Vector2f GetPosition();
+	sf::Vector2f GetPosition();
 
 	bool GetIsDestroy();
 
 	void Update(float time);
 
-	void Draw(RenderWindow & window);
+	void Draw(sf::RenderWindow & window);
 private:
 	float timeToDestroy = 4000;
 	float timerToDestroy = timeToDestroy;
 	float currFrame = 0;
 	float currAlpha = 255;
 	SpriteMap spriteMap;
-	Vector2f position;
+	sf::Vector2f position;
 	bool isDestroy = false;
 	float speedAnimation = 0.14f;
 };

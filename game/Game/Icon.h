@@ -3,23 +3,23 @@
 class Icon
 {
 public:
-	Sprite sprite;
+	sf::Sprite sprite;
 
 	Icon();
-	Icon(string nameTexture);
+	Icon(std::string nameTexture);
 	~Icon();
 
-	void SetSprite(string nameTexture);
+	void SetSprite(std::string nameTexture);
 
-	void SetPosition(Vector2f pos);
+	void SetPosition(sf::Vector2f pos);
 	void SetPosition(float x, float y);
 
 	void SetActive(bool isActive_);
 	bool GetActive();
 
-	void Draw(RenderWindow & window);
+	void Draw(sf::RenderWindow & window);
 
 private:
-	Texture texture;
+	sf::Texture texture;
 	bool isActive = false;
 };

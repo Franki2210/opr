@@ -1,11 +1,14 @@
 #pragma once
 
 void InitEntity(UsedEntities & usedEntities, Entities & entities, Textures & textures, UsedSounds & usedSounds,
-	UsedTexts & usedTexts, Font & font);
+	UsedTexts & usedTexts);
 
-void InitMapUsedEnemies(vector<Enemy*> & enemiesInLevel, UsedEntities & usedEntities);
+void InitMeteorSpawnTimer(Timer & meteorSpawnTimer);
+void InitEvilLaughTimer(Timer & timer);
 
-void InitTextMoney(Text & text, Font & font);
+void InitEnemySpawn(UsedEntities & usedEntities);
+
+void InitTextMoney(UsedTexts & usedTexts);
 
 void InitMusics(UsedMusics & usedMusics);
 

@@ -2,6 +2,8 @@
 #include "SpriteMap.h"
 #include "Portal.h"
 
+using namespace sf;
+
 Portal::Portal() = default;
 Portal::~Portal() = default;
 

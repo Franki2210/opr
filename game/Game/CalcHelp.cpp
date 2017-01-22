@@ -1,6 +1,8 @@
 #include "Header.h"
 #include "CalcHelp.h"
 
+using namespace sf;
+
 float CalculateDistance(const Vector2f & startPosition, const Vector2f & endPosition)
 {
 	Vector2f dirVector = endPosition - startPosition;

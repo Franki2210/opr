@@ -7,10 +7,10 @@ public:
 	SpriteMap();
 	~SpriteMap();
 
-	Sprite sprite;
-	SpriteMap(Texture & texture, const int column, const int line);
+	sf::Sprite sprite;
+	SpriteMap(sf::Texture & texture, const int column, const int line);
 
-	void SetSpriteMap(Texture & texture, const int columnsInMap, const int linesInMap);
+	void SetSpriteMap(sf::Texture & texture, const int columnsInMap, const int linesInMap);
 
 	void SetFrame(const int frame);
 	void SetFrame(const Direction direction, const float frame);
@@ -22,14 +22,14 @@ public:
 	int GetColumns();
 	int GetLines();
 
-	Vector2i GetTileSize(Texture & texture);
-	Vector2i GetTileSize();
+	sf::Vector2i GetTileSize(sf::Texture & texture);
+	sf::Vector2i GetTileSize();
 
-	void SetPosition(const Vector2f position);
+	void SetPosition(const sf::Vector2f position);
 	void SetPosition(const float x, const float y);
 
 private:
-	Vector2i tileSize = { 0, 0 };
+	sf::Vector2i tileSize = { 0, 0 };
 
 	int columns;
 	int lines;

@@ -1,5 +1,5 @@
-void Menu(Music & BG, state & gameState, View & view, RenderWindow & window);
+void Menu(UsedMusics & usedMusics, state & gameState, sf::View & view, sf::RenderWindow & window);
 
-void Win(Music & BGMusic, View & view, RenderWindow & window);
+void Win(sf::Music & BGMusic, sf::View & view, sf::RenderWindow & window);
 
-void Lose(Music & BGMusic, View & view, RenderWindow & window);
+void Lose(sf::Music & BGMusic, sf::View & view, sf::RenderWindow & window);

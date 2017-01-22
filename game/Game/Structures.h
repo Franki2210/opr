@@ -17,34 +17,54 @@
 #include "Vignette.h"
 #include "CameraShake.h"
 
+struct Timer
+{
+	float initial;
+	float current;
+};
+struct TimersSpawns
+{
+	Timer meteorSpawnTimer;
+	Timer evilLaughTimer;
+};
+
+struct EnemySpawner
+{
+	std::map<int, float> timeEnemySpawnOfNumberEnemy;
+	Timer timerToSpawn;
+	std::vector<Enemy*> enemiesInLevel;
+	std::vector<Enemy*>::iterator iterEnemy;
+	int numberEnemy = 0;
+};
+
 struct TexturesEnemy
 {
-	Texture texRun;
-	Texture texAttack;
+	sf::Texture texRun;
+	sf::Texture texAttack;
 };
 struct TexturesPlayer
 {
-	Texture idle;
-	Texture run;
+	sf::Texture idle;
+	sf::Texture run;
 };
 struct TextureBonuses
 {
-	Texture fireAccelTex;
-	Texture speedIncTex;
-	Texture damageIncTex;
-	Texture healthIncTex;
+	sf::Texture fireAccelTex;
+	sf::Texture speedIncTex;
+	sf::Texture damageIncTex;
+	sf::Texture healthIncTex;
 };
 struct TexturesBullets
 {
-	Texture gunShot;
-	Texture twinGunShot;
-	Texture laserShot;
+	sf::Texture gunShot;
+	sf::Texture twinGunShot;
+	sf::Texture laserShot;
 };
 struct TexturesMeteor
 {
-	Texture texture;
-	Texture shadow;
-	Texture pointArrival;
+	sf::Texture texture;
+	sf::Texture shadow;
+	sf::Texture pointArrival;
 };
 
 struct Textures
@@ -56,30 +76,30 @@ struct Textures
 	TextureBonuses bonuses;
 	TexturesBullets bullets;
 	TexturesMeteor meteor;
-	Texture tower1;
-	Texture tower2;
-	Texture tower3;
-	Texture coin;
-	Texture portal;
-	Texture map;
-	Texture explosion;
-	Texture towerExplosion;
-	Texture vignette;
-	Texture toxicCloud;
-	Texture enemyExplosion;
+	sf::Texture tower1;
+	sf::Texture tower2;
+	sf::Texture tower3;
+	sf::Texture coin;
+	sf::Texture portal;
+	sf::Texture map;
+	sf::Texture explosion;
+	sf::Texture towerExplosion;
+	sf::Texture vignette;
+	sf::Texture toxicCloud;
+	sf::Texture enemyExplosion;
 };
 
 struct Obstacles
 {
-	RectangleShape topObstacle;
-	RectangleShape downObstacle;
-	RectangleShape leftObstacle;
-	RectangleShape rightObstacle;
+	sf::RectangleShape topObstacle;
+	sf::RectangleShape downObstacle;
+	sf::RectangleShape leftObstacle;
+	sf::RectangleShape rightObstacle;
 };
 struct TowerInstalling
 {
-	CircleShape placingArea;
-	CircleShape notPlacingArea;
+	sf::CircleShape placingArea;
+	sf::CircleShape notPlacingArea;
 	bool intersectAtPlacing;
 	bool towerInstallation;
 };
@@ -103,10 +123,10 @@ struct UsedEnemies
 };
 struct UsedCursors
 {
-	Sprite aimCursor;
-	Sprite handCursor;
-	Texture aimTex;
-	Texture handTex;
+	sf::Sprite aimCursor;
+	sf::Sprite handCursor;
+	sf::Texture aimTex;
+	sf::Texture handTex;
 };
 struct UsedBonuses
 {
@@ -124,7 +144,7 @@ struct UsedBullets
 };
 struct UsedEntities
 {
-	Sprite mapSprite;
+	sf::Sprite mapSprite;
 	UsedIcons icons;
 	UsedTowers towers;
 	UsedEnemies enemies;
@@ -140,59 +160,63 @@ struct UsedEntities
 	Coin coin;
 	Vignette vignette;
 	CameraShake cameraShake;
+	TimersSpawns timersSpawns;
+	EnemySpawner enemySpawner;
 };
 
 struct Entities
 {
-	Sprite mapSprite;
+	sf::Sprite mapSprite;
 	Player player;
 	Portal portal;
 	Obstacles obstacles;
 	TowerInstalling towerInstalling;
 	Tower *placingTower;
-	list<Tower*> towers;
-	list<Enemy*> enemies;
-	list<Bullet*> bullets;
-	list<Coin*> coins;
-	list<Bonus*> bonuses;
-	list<ChangeHpView*> changeHpViews;
-	list<Meteor*> meteors;
-	list<Explosion*> explosions;
-	list<ToxicCloud*> toxicClouds;
-	list<EnemyRemnants*> enemyExplosions;
+	std::list<Tower*> towers;
+	std::list<Enemy*> enemies;
+	std::list<Bullet*> bullets;
+	std::list<Coin*> coins;
+	std::list<Bonus*> bonuses;
+	std::list<ChangeHpView*> changeHpViews;
+	std::list<Meteor*> meteors;
+	std::list<Explosion*> explosions;
+	std::list<ToxicCloud*> toxicClouds;
+	std::list<EnemyRemnants*> enemyExplosions;
 };
 
 struct UsedTextsTowersPrice
 {
-	Text tower1;
-	Text tower2;
-	Text tower3;
+	sf::Text tower1;
+	sf::Text tower2;
+	sf::Text tower3;
 };
 struct UsedTexts
 {
+	sf::Font font;
 	UsedTextsTowersPrice towersPrice;
+	sf::Text playerMoneyText;
 };
 
 struct ShotSounds
 {
-	SoundBuffer shot1Buffer;
-	SoundBuffer shot2Buffer;
-	SoundBuffer shot3Buffer;
-	Sound shot1;
-	Sound shot2;
-	Sound shot3;
+	sf::SoundBuffer shot1Buffer;
+	sf::SoundBuffer shot2Buffer;
+	sf::SoundBuffer shot3Buffer;
+	sf::Sound shot1;
+	sf::Sound shot2;
+	sf::Sound shot3;
 };
 struct StepsSounds
 {
-	SoundBuffer step1;
-	SoundBuffer step2;
-	SoundBuffer step3;
-	SoundBuffer step4;
+	sf::SoundBuffer step1;
+	sf::SoundBuffer step2;
+	sf::SoundBuffer step3;
+	sf::SoundBuffer step4;
 };
 struct OneSound
 {
-	SoundBuffer soundBuf;
-	Sound sound;
+	sf::SoundBuffer soundBuf;
+	sf::Sound sound;
 };
 struct UsedSounds
 {
@@ -210,8 +234,9 @@ struct UsedSounds
 
 struct UsedMusics
 {
-	Music menu;
-	Music game;
-	Music lose;
-	Music win;
+	sf::Music menu;
+	sf::Music game;
+	sf::Music lose;
+	sf::Music win;
+	sf::Music alarm;
 };

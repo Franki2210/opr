@@ -1,5 +1,7 @@
 #include "SpriteMap.h"
 
+using namespace sf;
+
 SpriteMap::SpriteMap() = default;
 SpriteMap::~SpriteMap() = default;
 

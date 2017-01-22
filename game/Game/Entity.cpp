@@ -2,6 +2,8 @@
 #include "SpriteMap.h"
 #include "Entity.h"
 
+using namespace sf;
+
 Entity::Entity()
 {
 	currHp = maxHp = 100;
@@ -38,9 +40,9 @@ Entity::Entity(Vector2f pos, float HP, float damage_)
 Entity::~Entity() = default;
 
 //Жизни
-void Entity::SetMaxHp(const float maxHp_)
+void Entity::SetMaxHp(const float maxHP)
 {
-	maxHp = maxHp_;
+	maxHp = maxHP;
 	currHp = maxHp;
 }
 float Entity::GetMaxHp()
@@ -69,19 +71,19 @@ void Entity::SetHpPosition(const Vector2f pos)
 }
 
 //Урон
-void Entity::SetDamage(const float damage_)
+void Entity::SetDamage(const float value)
 {
-	damage = damage_;
+	damage = value;
 }
 float Entity::GetDamage()
 {
 	return damage;
 }
 //Принять урон
-void Entity::TakeDamage(const float damage_)
+void Entity::TakeDamage(const float value)
 {
-	currHp -= damage_;
-	if (currHp < 0)
+	currHp -= value;
+	if (currHp <= 0)
 	{
 		isDestroy = true;
 	}

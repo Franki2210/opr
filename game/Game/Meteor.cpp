@@ -1,8 +1,28 @@
 #include "Header.h"
 #include "Meteor.h"
 
+using namespace sf;
+
 Meteor::Meteor() = default;
 Meteor::~Meteor() = default;
+
+Meteor::Meteor(Texture & texture, Texture & textureShadow, Texture & textureArrival, const float damageMeteor, const float speedMeteor)
+{
+	sprite.setTexture(texture);
+	spriteShadow.setTexture(textureShadow);
+	spritePointArrival.setTexture(textureArrival);
+	sprite.setOrigin(sprite.getGlobalBounds().left, sprite.getGlobalBounds().height);
+	spriteShadow.setOrigin(spriteShadow.getGlobalBounds().left, spriteShadow.getGlobalBounds().height / 2);
+	spritePointArrival.setOrigin(spritePointArrival.getGlobalBounds().width / 2, spritePointArrival.getGlobalBounds().height / 2);
+	sprite.setScale(0.5f, 0.5f);
+	spriteShadow.setScale(0.5f, 0.5f);
+	spritePointArrival.setScale(0.9f, 0.9f);
+	spriteShadow.setColor(Color(255, 255, 255, 50));
+	spritePointArrival.setColor(Color(255, 255, 255, 50));
+
+	damage = damageMeteor;
+	speed = speedMeteor;
+}
 
 void Meteor::SetMeteor(Texture & texture, Texture & textureShadow, Texture & textureArrival, const float damageMeteor, const float speedMeteor)
 {
@@ -14,26 +34,18 @@ void Meteor::SetMeteor(Texture & texture, Texture & textureShadow, Texture & tex
 	spritePointArrival.setOrigin(spritePointArrival.getGlobalBounds().width / 2, spritePointArrival.getGlobalBounds().height / 2);
 	sprite.setScale(0.5f, 0.5f);
 	spriteShadow.setScale(0.5f, 0.5f);
-	spritePointArrival.setScale(0.5f, 0.5f);
+	//spritePointArrival.setScale(0.9f, 0.9f);
 	spriteShadow.setColor(Color(255, 255, 255, 50));
 	spritePointArrival.setColor(Color(255, 255, 255, 50));
 
 	damage = damageMeteor;
 	speed = speedMeteor;
 }
-void Meteor::SetSounds(Sound *sound_)
-{
-	sound = sound_;
-}
-Sound *Meteor::GetSound()
-{
-	return sound;
-}
 
 void Meteor::SetArrivalPosition(const Vector2f pos)
 {
 	arrivalPosition = pos;
-	startPosition = arrivalPosition - moveVector * 1000.0f;
+	startPosition = arrivalPosition - moveVector * 5000.0f;
 	currPosition = startPosition;
 
 	sprite.setPosition(currPosition);
@@ -43,7 +55,7 @@ void Meteor::SetArrivalPosition(const Vector2f pos)
 void Meteor::SetArrivalPosition(const float x, const float y)
 {
 	arrivalPosition = Vector2f(x, y);
-	startPosition = arrivalPosition - moveVector * 1000.0f;
+	startPosition = arrivalPosition - moveVector * 3000.0f;
 	currPosition = startPosition;
 
 	sprite.setPosition(currPosition);

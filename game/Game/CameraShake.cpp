@@ -1,6 +1,8 @@
 #include "Header.h"
 #include "CameraShake.h"
 
+using namespace sf;
+
 CameraShake::CameraShake() = default;
 CameraShake::~CameraShake() = default;
 

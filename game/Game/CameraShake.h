@@ -10,7 +10,7 @@ public:
 	bool GetShake();
 	void SetOffsetWithShake(const int value);
 
-	void Update(View & view, const Vector2f & positionPlayer, const float time);
+	void Update(sf::View & view, const sf::Vector2f & positionPlayer, const float time);
 private:
 	float timeShake = 1000.0f;
 	float timerShake = timeShake;

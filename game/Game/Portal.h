@@ -6,16 +6,16 @@ public:
 	Portal();
 	~Portal();
 
-	void SetSpriteMap(Texture & texture, const int numColumns, const int numLines);
+	void SetSpriteMap(sf::Texture & texture, const int numColumns, const int numLines);
 
 	void SetSpeedAnimation(const float value);
 
 	void SetPosition(const float x, const float y);
-	void SetPosition(const Vector2f pos);
+	void SetPosition(const sf::Vector2f pos);
 
 	void Update(const float time);
 
-	void Draw(RenderWindow & window);
+	void Draw(sf::RenderWindow & window);
 
 private:
 	SpriteMap spriteMap;

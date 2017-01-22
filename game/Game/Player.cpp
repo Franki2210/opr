@@ -1,6 +1,8 @@
 #include "SpriteMap.h"
 #include "Player.h"
 
+using namespace sf;
+
 Player::Player() = default;
 Player::Player(Texture texIdle, const  int colIdle, const int lineIdle,
 				Texture texRun, const int colRun, const int lineRun)

@@ -5,7 +5,7 @@
 EnemyRemnants::EnemyRemnants() = default;
 EnemyRemnants::~EnemyRemnants() = default;
 
-void EnemyRemnants::SetEnemyExplosion(Texture & texture, int columnsInMap, int linesInMap)
+void EnemyRemnants::SetEnemyExplosion(sf::Texture & texture, int columnsInMap, int linesInMap)
 {
 	spriteMap.SetSpriteMap(texture, columnsInMap, linesInMap);
 }
@@ -15,23 +15,28 @@ void EnemyRemnants::SetSpeedAnimation(float value)
 	speedAnimation = value;
 }
 
+void EnemyRemnants::SetRandomRotate()
+{
+	spriteMap.sprite.setRotation(rand() % 360);
+}
+
 void EnemyRemnants::SetTimeToDestroy(float value)
 {
 	timeToDestroy = value;
 	timerToDestroy = timeToDestroy;
 }
 
-void EnemyRemnants::SetPosition(Vector2f pos)
+void EnemyRemnants::SetPosition(sf::Vector2f pos)
 {
 	position = pos;
 	spriteMap.sprite.setPosition(position);
 }
 void EnemyRemnants::SetPosition(float x, float y)
 {
-	position = Vector2f(x, y);
+	position = sf::Vector2f(x, y);
 	spriteMap.sprite.setPosition(position);
 }
-Vector2f EnemyRemnants::GetPosition()
+sf::Vector2f EnemyRemnants::GetPosition()
 {
 	return position;
 }
@@ -55,13 +60,13 @@ void EnemyRemnants::Update(float time)
 		{
 			currAlpha -= 0.13f * time;
 			if (currAlpha <= 0) currAlpha = 0;
-			spriteMap.sprite.setColor(Color(255, 255, 255, (Uint8)currAlpha));
+			spriteMap.sprite.setColor(sf::Color(255, 255, 255, sf::Uint8(currAlpha)));
 		}
 	}
 	else isDestroy = true;
 }
 
-void EnemyRemnants::Draw(RenderWindow & window)
+void EnemyRemnants::Draw(sf::RenderWindow & window)
 {
 	window.draw(spriteMap.sprite);
 }

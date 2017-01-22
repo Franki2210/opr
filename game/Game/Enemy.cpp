@@ -7,29 +7,29 @@
 #include "Player.h"
 
 Enemy::Enemy() = default;
-Enemy::Enemy(Texture & texture, const int columnInMap, const int lineInMap)
+Enemy::Enemy(sf::Texture & texture, const int columnInMap, const int lineInMap)
 {
 	spriteMapRun.SetSpriteMap(texture, columnInMap, lineInMap);
 	damageArea.setRadius(25);
-	damageArea.setFillColor(Color::Red);
+	damageArea.setFillColor(sf::Color::Red);
 	damageArea.setOrigin(damageArea.getRadius(), damageArea.getRadius());
-	spriteMapRun.sprite.setScale(Vector2f(0.6f, 0.6f));
+	spriteMapRun.sprite.setScale(sf::Vector2f(0.6f, 0.6f));
 }
 Enemy::~Enemy() = default;
 
 //Текстурки движения и атаки
-void Enemy::SetTextureRun(Texture & texture, const int columnInMap, const int lineInMap)
+void Enemy::SetTextureRun(sf::Texture & texture, const int columnInMap, const int lineInMap)
 {
 	spriteMapRun.SetSpriteMap(texture, columnInMap, lineInMap);
 	damageArea.setRadius(25);
-	damageArea.setFillColor(Color::Red);
+	damageArea.setFillColor(sf::Color::Red);
 	damageArea.setOrigin(damageArea.getRadius(), damageArea.getRadius());
-	spriteMapRun.sprite.setScale(Vector2f(0.6f, 0.6f));
+	spriteMapRun.sprite.setScale(sf::Vector2f(0.6f, 0.6f));
 }
-void Enemy::SetTextureAttack(Texture & texture, const int columnInMap, const int lineInMap)
+void Enemy::SetTextureAttack(sf::Texture & texture, const int columnInMap, const int lineInMap)
 {
 	spriteMapAttack.SetSpriteMap(texture, columnInMap, lineInMap);
-	spriteMapAttack.sprite.setScale(Vector2f(0.6f, 0.6f));
+	spriteMapAttack.sprite.setScale(sf::Vector2f(0.6f, 0.6f));
 	spriteMapAttack.sprite.setOrigin(spriteMapAttack.sprite.getLocalBounds().width / 3, spriteMapAttack.sprite.getLocalBounds().height / 2);
 }
 
@@ -72,9 +72,9 @@ Tower *Enemy::GetNearTower()
 }
 
 //Сколько монеток выпадет
-void Enemy::SetCoins(const int coins_)
+void Enemy::SetCoins(const int coinsEnemy)
 {
-	coins = coins_;
+	coins = coinsEnemy;
 }
 int Enemy::GetCoins()
 {
@@ -82,20 +82,20 @@ int Enemy::GetCoins()
 }
 
 //Скорость
-void Enemy::SetSpeed(const float speed_)
+void Enemy::SetSpeed(const float speedEnemy)
 {
-	speed = speed_;
+	speed = speedEnemy;
 }
 
 void Enemy::Update(const float time)
 {
 	if (attackTimer > 0) attackTimer -= time;
 
-	Vector2f posTarget;
+	sf::Vector2f posTarget;
 	if (!attackingPlayer) posTarget = tower->GetPosition();
 	else posTarget = player->GetPosition();
 
-	Vector2f dirVector = posTarget - position;
+	sf::Vector2f dirVector = posTarget - position;
 	float distance = CalculateDistance(dirVector);
 	double angle = (atan2(dirVector.y, dirVector.x)) * 180 / 3.14159265 + 90;
 	if (angle < 0) angle += 360;
@@ -172,7 +172,7 @@ void Enemy::Update(const float time)
 	damageArea.setPosition(position);
 	SetHpPosition(position);
 }
-void Enemy::Draw(RenderWindow & window)
+void Enemy::Draw(sf::RenderWindow & window)
 {
 	if (attack)
 	{

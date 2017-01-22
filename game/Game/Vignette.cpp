@@ -1,6 +1,8 @@
 #include "Header.h"
 #include "Vignette.h"
 
+using namespace sf;
+
 Vignette::Vignette() = default;
 Vignette::~Vignette() = default;
 

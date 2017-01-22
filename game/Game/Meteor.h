@@ -5,40 +5,39 @@ class Meteor
 public:
 	Meteor();
 	~Meteor();
+	Meteor(sf::Texture & texture, sf::Texture & textureShadow, sf::Texture & textureArrival, const float damageMeteor, const float speedMeteor);
 
-	void SetMeteor(Texture & texture, Texture & textureShadow, Texture & textureArrival, const float damage, const float speed);
-	void SetSounds(Sound *sound_);
-	Sound *GetSound();
+	void SetMeteor(sf::Texture & texture, sf::Texture & textureShadow, sf::Texture & textureArrival, const float damageMeteor, const float speedMeteor);
 
-	void SetArrivalPosition(const Vector2f pos);
+	void SetArrivalPosition(const sf::Vector2f pos);
 	void SetArrivalPosition(const float x, const float y);
-	Vector2f GetArrivalPosition();
-	Vector2f GetCurrentPosition();
+	sf::Vector2f GetArrivalPosition();
+	sf::Vector2f GetCurrentPosition();
 
-	void SetMoveVector(const Vector2f value);
+	void SetMoveVector(const sf::Vector2f value);
 
-	FloatRect GetArrivalArea();
+	sf::FloatRect GetArrivalArea();
 	float GetDamage();
 
 	bool GetArrival();
 
 	void Update(const float time);
 
-	void Draw(RenderWindow & window);
+	void Draw(sf::RenderWindow & window);
 
 private:
-	Sprite sprite;
-	Sprite spriteShadow;
-	Sprite spritePointArrival;
+	sf::Sprite sprite;
+	sf::Sprite spriteShadow;
+	sf::Sprite spritePointArrival;
 
-	Vector2f arrivalPosition;
-	Vector2f currPosition;
-	Vector2f moveVector = Vector2f(-0.81f, 0.57f);
-	Vector2f startPosition;
+	sf::Vector2f arrivalPosition;
+	sf::Vector2f currPosition;
+	sf::Vector2f moveVector = sf::Vector2f(-0.81f, 0.57f);
+	sf::Vector2f startPosition;
 
-	bool isArrival;
+	bool isArrival = false;
 
 	float speed = 0.2f;
 	float damage;
-	Sound *sound;
+	sf::Sound *sound;
 };

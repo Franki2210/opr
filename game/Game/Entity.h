@@ -6,30 +6,30 @@ public:
 	bool isDestroy = false;
 
 	Entity();
-	Entity(Vector2f pos, float HP, float damage_);
+	Entity(sf::Vector2f pos, float HP, float damage);
 	~Entity();
 
 	//Жизни
-	void SetMaxHp(const float maxHp_);
+	void SetMaxHp(const float maxHp);
 	float GetMaxHp();
 	void AddHp(const float value);
 	void SetCurrentHp(const float hp);
 	float GetCurrentHp();
 
-	void SetHpPosition(const Vector2f pos);
+	void SetHpPosition(const sf::Vector2f pos);
 
 	//Урон
-	void SetDamage(const float damage_);
+	void SetDamage(const float value);
 	float GetDamage();
 	//Принять урон
-	void TakeDamage(const float damage_);
+	void TakeDamage(const float value);
 
 	//Позиция
-	void SetPosition(const Vector2f pos);
+	void SetPosition(const sf::Vector2f pos);
 	void SetPosition(const float x, const float y);
-	Vector2f GetPosition();
+	sf::Vector2f GetPosition();
 
-	void DrawHp(RenderWindow & window);
+	void DrawHp(sf::RenderWindow & window);
 
 protected:
 	float maxHp;
@@ -37,13 +37,13 @@ protected:
 
 	float damage;
 
-	Vector2f position;
+	sf::Vector2f position;
 
-	Texture hpTex;
-	Sprite hpSpriteBG;
-	Sprite hpSprite;
-	Color hpSpriteBGColor;
-	Color hpSpriteColor;
+	sf::Texture hpTex;
+	sf::Sprite hpSpriteBG;
+	sf::Sprite hpSprite;
+	sf::Color hpSpriteBGColor;
+	sf::Color hpSpriteColor;
 
-	Vector2f hpPosition;
+	sf::Vector2f hpPosition;
 };

@@ -1,6 +1,8 @@
 #include "Header.h"
 #include "Tower.h"
 
+using namespace sf;
+
 Tower::Tower()
 {
 	actionArea.setRadius(400);
@@ -31,7 +33,7 @@ Tower::Tower(Texture & texture, int column, int line)
 	actionArea.setPointCount(60);
 
 	boundsArea.setOrigin(boundsArea.getRadius(), boundsArea.getRadius());
-	boundsArea.setRadius(50);
+	boundsArea.setRadius(80);
 	Color boundsAreaColor(200, 50, 50, 100);
 	boundsArea.setFillColor(boundsAreaColor);
 }
@@ -53,7 +55,7 @@ int Tower::GetNumFrameFromDirection(Vector2f posEnemy)
 	float dY = posEnemy.y - position.y;
 	float angle = (atan2(dY, dX)) * 180 / 3.14159265f + 90;
 	if (angle < 0) angle += 360;
-	int frame = (int)(angle / (360. / (spriteMap.GetColumns() * spriteMap.GetLines())));
+	int frame = (int)(angle / (360.0f / (spriteMap.GetColumns() * spriteMap.GetLines())));
 	return frame;
 }
 

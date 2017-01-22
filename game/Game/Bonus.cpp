@@ -1,5 +1,7 @@
 #include "Bonus.h"
 
+using namespace sf;
+
 Bonus::Bonus(Texture & texture, const float valueBonus, const float timeToDestroy, const float timeOfAction)
 {
 	sprite.setTexture(texture);
@@ -9,7 +11,7 @@ Bonus::Bonus(Texture & texture, const float valueBonus, const float timeToDestro
 	this->timeOfAction = timeOfAction;
 }
 
-void Bonus::SetBonus(const string nameBonus, Texture & texture, const float valueBonus, const float timeToDestroy, const float timeOfAction = 0)
+void Bonus::SetBonus(const std::string nameBonus, sf::Texture & texture, const float valueBonus, const float timeToDestroy, const float timeOfAction = 0)
 {
 	sprite.setTexture(texture);
 	sprite.setOrigin(sprite.getGlobalBounds().width / 2.0f, sprite.getGlobalBounds().height / 2.0f);
@@ -20,12 +22,12 @@ void Bonus::SetBonus(const string nameBonus, Texture & texture, const float valu
 	this->timeOfAction = timeOfAction;
 }
 
-string Bonus::GetName()
+std::string Bonus::GetName()
 {
 	return name;
 }
 
-void Bonus::SetPosition(Vector2f pos)
+void Bonus::SetPosition(sf::Vector2f pos)
 {
 	position = pos;
 	sprite.setPosition(position);
@@ -35,7 +37,7 @@ void Bonus::SetPosition(const float x, const float y)
 	position = Vector2f(x, y);
 	sprite.setPosition(position);
 }
-Vector2f Bonus::GetPosition()
+sf::Vector2f Bonus::GetPosition()
 {
 	return position;
 }

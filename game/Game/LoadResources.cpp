@@ -1,7 +1,7 @@
 #include "Header.h"
 #include "LoadResources.h"
 
-bool LoadTowerTextures(Texture & tower1, Texture & tower2, Texture & tower3)
+bool LoadTowerTextures(sf::Texture & tower1, sf::Texture & tower2, sf::Texture & tower3)
 {
 	return tower1.loadFromFile(PATH_TO_TEXTURES + "towers/gun_turret.png") &&
 		tower2.loadFromFile(PATH_TO_TEXTURES + "towers/twin_gun_turret.png") &&
@@ -21,15 +21,15 @@ bool LoadPlayerTextures(TexturesPlayer & player)
 	return player.idle.loadFromFile(PATH_TO_TEXTURES + "player_idle.png") &&
 		player.run.loadFromFile(PATH_TO_TEXTURES + "player_run.png");
 }
-bool LoadPortalTexture(Texture & portal)
+bool LoadPortalTexture(sf::Texture & portal)
 {
 	return portal.loadFromFile(PATH_TO_TEXTURES + "portal.png");
 }
-bool LoadCoinTexture(Texture & coin)
+bool LoadCoinTexture(sf::Texture & coin)
 {
 	return coin.loadFromFile(PATH_TO_TEXTURES + "coin.png");
 }
-bool LoadMapTexture(Texture & map)
+bool LoadMapTexture(sf::Texture & map)
 {
 	return map.loadFromFile(PATH_TO_TEXTURES + "map/map.png");
 }
@@ -52,23 +52,23 @@ bool LoadMeteorTextures(TexturesMeteor & meteor)
 		meteor.shadow.loadFromFile(PATH_TO_TEXTURES + "meteor/meteor_shadow.png") &&
 		meteor.pointArrival.loadFromFile(PATH_TO_TEXTURES + "meteor/point_arrival.png");
 }
-bool LoadExplosionTexture(Texture & explosion)
+bool LoadExplosionTexture(sf::Texture & explosion)
 {
 	return explosion.loadFromFile(PATH_TO_TEXTURES + "explosion/explosion.png");
 }
-bool LoadTowerExplosionTexture(Texture & explosion)
+bool LoadTowerExplosionTexture(sf::Texture & explosion)
 {
 	return explosion.loadFromFile(PATH_TO_TEXTURES + "explosion/explosion2.png");
 }
-bool LoadVignetteTexture(Texture & vignette)
+bool LoadVignetteTexture(sf::Texture & vignette)
 {
 	return vignette.loadFromFile(PATH_TO_TEXTURES + "vignette.png");
 }
-bool LoadToxicCloudTexture(Texture & toxicCloud)
+bool LoadToxicCloudTexture(sf::Texture & toxicCloud)
 {
 	return toxicCloud.loadFromFile(PATH_TO_TEXTURES + "toxic_cloud.png");
 }
-bool LoadEnemyExplosionTexture(Texture & enemyExplosion)
+bool LoadEnemyExplosionTexture(sf::Texture & enemyExplosion)
 {
 	return enemyExplosion.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy_explosion.png");
 }
@@ -136,4 +136,9 @@ bool LoadSounds(UsedSounds & sounds)
 		LoadStepSounds(sounds.steps) && LoadPlaceTowerSound(sounds.placeTower) &&
 		LoadDropItemSound(sounds.dropItem) && LoadEvilLaughSound(sounds.evilLaugh) &&
 		LoadExplosionSound(sounds.explosion) && LoadHeartbeatSound(sounds.heartbeat);
+}
+
+bool LoadFont(sf::Font & font)
+{
+	return font.loadFromFile(PATH_TO_FONTS + "font.ttf");
 }

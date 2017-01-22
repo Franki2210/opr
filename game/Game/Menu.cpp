@@ -1,26 +1,85 @@
 #include "Header.h"
 #include "SpriteMap.h"
+#include "Structures.h"
 #include "Menu.h"
 
-void Menu(Music & BG, state & gameState, View & view, RenderWindow & window)
+using namespace sf;
+
+void PauseBeforeNewGame(UsedMusics & usedMusics, RenderWindow & window)
+{
+	Texture blackScreenTexture;
+	blackScreenTexture.loadFromFile(PATH_TO_TEXTURES + "black_screen.png");
+	Sprite blackScreenSprite;
+	blackScreenSprite.setTexture(blackScreenTexture);
+	float timeToExtinction = 5.0f;
+	float currAlpha = 0;
+	Clock clock;
+	usedMusics.menu.stop();
+	usedMusics.alarm.play();
+	usedMusics.game.setVolume(100);
+	while (timeToExtinction > 0)
+	{
+		float time = clock.getElapsedTime().asSeconds();
+		clock.restart();
+
+		timeToExtinction -= time;
+
+		if (currAlpha < 255.0f)
+		{
+			currAlpha += 255.0f * time * 0.06f;
+			blackScreenSprite.setColor(Color(0, 0, 0, (Uint8)currAlpha));
+		}
+		else
+		{
+			blackScreenSprite.setColor(Color(0, 0, 0, 255));
+		}
+
+		if (timeToExtinction < 1.7f)
+		{
+			if (usedMusics.game.getStatus() == SoundSource::Stopped)
+			{
+				usedMusics.game.play();
+			}
+			//usedMusics.game.setVolume(100 - (100 * timeToExtinction / 2.0f));
+		}
+		else if (timeToExtinction <= 0)
+		{
+			usedMusics.game.setVolume(100);
+		}
+
+		window.draw(blackScreenSprite);
+		window.display();
+	}
+	usedMusics.alarm.stop();
+}
+
+void Menu(UsedMusics & usedMusics, state & gameState, View & view, RenderWindow & window)
 {
 	Texture newGameTexture;
 	Texture exitTexture;
 	Texture menuBackground;
+
 	newGameTexture.loadFromFile(PATH_TO_TEXTURES + "new_game.png");
 	exitTexture.loadFromFile(PATH_TO_TEXTURES + "exit.png");
-	menuBackground.loadFromFile(PATH_TO_TEXTURES + "bg.png");
+	menuBackground.loadFromFile(PATH_TO_TEXTURES + "bg.jpg");
+
 	Sprite newGameButton(newGameTexture);
 	Sprite exitButton(exitTexture);
 	Sprite menuBg(menuBackground);
-	menuBg.setScale(2.5f, 2.5f);
+	newGameButton.setTextureRect(IntRect(0, 0, newGameTexture.getSize().x, newGameTexture.getSize().y));
+	exitButton.setTextureRect(IntRect(0, 0, exitTexture.getSize().x, exitTexture.getSize().y));
+
 	bool isMenu = 1;
 	int menuNum = 0;
-	newGameButton.setPosition(100, 30);
-	exitButton.setPosition(100, 90);
+
+	newGameButton.setPosition(0, 0);
+	exitButton.setPosition(0, 60);
+	newGameButton.setScale(0.5f, 0.5f);
+	exitButton.setScale(0.5f, 0.5f);
 	menuBg.setPosition(0, 0);
+
 	window.setMouseCursorVisible(true);
-	if (BG.getStatus() == SoundStream::Stopped) BG.play();
+	usedMusics.menu.play();
 	view.setCenter(view.getSize().x / 2, view.getSize().y / 2);
 	window.setView(view);
 	menuBg.setColor(Color::White);
@@ -36,16 +95,15 @@ void Menu(Music & BG, state & gameState, View & view, RenderWindow & window)
 		}
 
 		menuNum = 0;
-		window.clear(Color(255, 255, 255));
 
-		if (newGameButton.getGlobalBounds().contains((Vector2f)Mouse::getPosition(window)))
+		if (FloatRect(0, 0, 400, 80).contains((Vector2f)Mouse::getPosition(window)))
 		{
-			newGameButton.setColor(Color::Blue);
+			newGameButton.setColor(Color(255, 80, 80));
 			menuNum = 1;
 		}
-		if (exitButton.getGlobalBounds().contains((Vector2f)Mouse::getPosition(window)))
+		if (FloatRect(0, 80, 400, 80).contains((Vector2f)Mouse::getPosition(window)))
 		{
-			exitButton.setColor(Color::Blue);
+			exitButton.setColor(Color(255, 80, 80));
 			menuNum = 2;
 		}
 
@@ -56,7 +114,8 @@ void Menu(Music & BG, state & gameState, View & view, RenderWindow & window)
 				isMenu = false;
 				gameState = state::game;
 				window.setMouseCursorVisible(false);
-				BG.stop();
+				PauseBeforeNewGame(usedMusics, window);
+				usedMusics.menu.stop();
 			}
 			if (menuNum == 2)
 			{
@@ -65,6 +124,7 @@ void Menu(Music & BG, state & gameState, View & view, RenderWindow & window)
 			}
 		}
 
+		window.clear(Color::Black);
 		window.draw(menuBg);
 		window.draw(newGameButton);
 		window.draw(exitButton);
@@ -76,17 +136,24 @@ void Win(Music & BGMusic, View & view, RenderWindow & window)
 {
 	Texture exitTexture;
 	Texture backgroundTexture;
+
 	exitTexture.loadFromFile(PATH_TO_TEXTURES + "exit.png");
-	backgroundTexture.loadFromFile(PATH_TO_TEXTURES + "win.jpg");
+	backgroundTexture.loadFromFile(PATH_TO_TEXTURES + "win.png");
+
 	Sprite exitButton(exitTexture);
 	Sprite menuBg(backgroundTexture);
-	menuBg.setScale(2, 2);
+
+	exitButton.setScale(0.5f, 0.5f);
+
 	bool isMenu = true;
 	bool isExitButton = false;
-	exitButton.setPosition(100, 90);
+
+	exitButton.setPosition(0, 0);
 	menuBg.setPosition(0, 0);
+
 	window.setMouseCursorVisible(true);
 	if (BGMusic.getStatus() == SoundStream::Stopped) BGMusic.play();
+
 	view.setCenter(view.getSize().x / 2, view.getSize().y / 2);
 	window.setView(view);
 	menuBg.setColor(Color::White);
@@ -99,9 +166,9 @@ void Win(Music & BGMusic, View & view, RenderWindow & window)
 		}
 		window.clear(Color::White);
 
-		if (exitButton.getGlobalBounds().contains((Vector2f)Mouse::getPosition(window)))
+		if (FloatRect(0, 0, 400, 80).contains((Vector2f)Mouse::getPosition(window)))
 		{
-			exitButton.setColor(Color::Blue);
+			exitButton.setColor(Color(255, 80, 80));
 			isExitButton = true;
 		}
 
@@ -121,15 +188,21 @@ void Lose(Music & BGMusic, View & view, RenderWindow & window)
 {
 	Texture exitTexture;
 	Texture backgroundTexture;
+
 	exitTexture.loadFromFile(PATH_TO_TEXTURES + "exit.png");
-	backgroundTexture.loadFromFile(PATH_TO_TEXTURES + "lose.jpg");
+	backgroundTexture.loadFromFile(PATH_TO_TEXTURES + "lose.png");
+
 	Sprite exitButton(exitTexture);
 	Sprite menuBg(backgroundTexture);
-	menuBg.setScale(2, 2);
+
+	exitButton.setScale(0.5f, 0.5f);
+
 	bool isMenu = true;
 	bool isExitButton = false;
-	exitButton.setPosition(100, 90);
+
+	exitButton.setPosition(0, 0);
 	menuBg.setPosition(0, 0);
+
 	window.setMouseCursorVisible(true);
 	if (BGMusic.getStatus() == SoundStream::Stopped) BGMusic.play();
 	view.setCenter(view.getSize().x / 2, view.getSize().y / 2);
@@ -144,9 +217,9 @@ void Lose(Music & BGMusic, View & view, RenderWindow & window)
 		}
 		window.clear(Color::White);
 
-		if (exitButton.getGlobalBounds().contains((Vector2f)Mouse::getPosition(window)))
+		if (FloatRect(0, 0, 400, 80).contains((Vector2f)Mouse::getPosition(window)))
 		{
-			exitButton.setColor(Color::Blue);
+			exitButton.setColor(Color(255, 80, 80));
 			isExitButton = true;
 		}
 

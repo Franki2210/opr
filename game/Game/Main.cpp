@@ -19,18 +19,89 @@
 #include "CameraShake.h"
 #include "Menu.h"
 
-const int SCREEN_WIDTH = 1600;
-const int SCREEN_HEIGHT = 900;
-const float VIEW_WIDTH = 1280.0f;
-const float VIEW_HEIGHT = 720.0f;
+using namespace sf;
+using namespace std;
 
-void SpawnEnemy(vector<Enemy*> enemiesInLevel, vector<Enemy*>::iterator & iterEnemy, list<Enemy*> & enemies, int & numberEnemy)
+static const int SCREEN_WIDTH = 1600;
+static const int SCREEN_HEIGHT = 900;
+static const float VIEW_WIDTH = 1280.0f;
+static const float VIEW_HEIGHT = 720.0f;
+static const float MAP_SIZE = 2112.0f;
+static const int CHANCE_DROP_BONUS = 20;
+static const int CHANCE_SPAWN_TOXIC_CLOUD = 80;
+static const int CHANCE_LAUGH_IN_SECONDS = 1;
+
+Vector2f GetMousePosition(RenderWindow & window)
 {
-	enemies.push_back(*iterEnemy);
-	iterEnemy++;
-	numberEnemy++;
+	Vector2i pixelPos = Mouse::getPosition(window);
+	return window.mapPixelToCoords(pixelPos);
 }
-void SpawnCoin(list<Coin*> & coins, Coin & coin, int value, Vector2f position)
+void TowerInstall(Entities & entities, UsedSounds & usedSounds, const Vector2f mousePos, RenderWindow & window)
+{
+	if (entities.towerInstalling.towerInstallation)
+	{
+		entities.placingTower->SetPosition(mousePos);
+		if (entities.towerInstalling.placingArea.getGlobalBounds().contains(mousePos) && !entities.towerInstalling.notPlacingArea.getGlobalBounds().contains(mousePos) && !entities.towerInstalling.intersectAtPlacing)
+		{
+			entities.placingTower->spriteMap.sprite.setColor(Color::Green);
+			window.draw(entities.placingTower->actionArea);
+			if (Mouse::isButtonPressed(Mouse::Left))
+			{
+				entities.towerInstalling.towerInstallation = false;
+				entities.placingTower->isActive = true;
+				entities.placingTower->spriteMap.sprite.setColor(Color::White);
+				entities.towers.push_back(entities.placingTower);
+				entities.player.SubCoins(entities.placingTower->GetPrice());
+				entities.player.canShot = false;
+				usedSounds.placeTower.sound.play();
+			}
+		}
+		else
+		{
+			entities.placingTower->spriteMap.sprite.setColor(Color::Red);
+		}
+		entities.placingTower->Update();
+		entities.towerInstalling.placingArea.setPosition(entities.player.GetPosition());
+		entities.towerInstalling.notPlacingArea.setPosition(entities.player.GetPosition());
+		window.draw(entities.towerInstalling.placingArea);
+		window.draw(entities.towerInstalling.notPlacingArea);
+		window.draw(entities.placingTower->spriteMap.sprite);
+	}
+}
+void PlayerTracking(Player & player, CameraShake & cameraShake, const float mapSize, View & view, const float time)
+{
+	if (player.GetPosition().x < view.getSize().x / 2 || player.GetPosition().x > mapSize - view.getSize().x / 2 ||
+		player.GetPosition().y < view.getSize().y / 2 || player.GetPosition().y > mapSize - view.getSize().y / 2)
+	{
+		float tempX = player.GetPosition().x;
+		float tempY = player.GetPosition().y;
+		if (player.GetPosition().x < view.getSize().x / 2)
+			tempX = view.getSize().x / 2;
+		if (player.GetPosition().x > mapSize - view.getSize().x / 2)
+			tempX = mapSize - view.getSize().x / 2;
+		if (player.GetPosition().y < view.getSize().y / 2)
+			tempY = view.getSize().y / 2;
+		if (player.GetPosition().y > mapSize - view.getSize().y / 2)
+			tempY = mapSize - view.getSize().y / 2;
+
+		if (cameraShake.GetShake())
+			cameraShake.Update(view, Vector2f(tempX, tempY), time);
+		else view.setCenter(tempX, tempY);
+	}
+	else
+	{
+		if (cameraShake.GetShake()) cameraShake.Update(view, player.GetPosition(), time);
+		else view.setCenter(player.GetPosition());
+	}
+}
+
+void SpawnEnemy(EnemySpawner & enemySpawn, list<Enemy*> & enemies)
+{
+	enemies.push_back(*enemySpawn.iterEnemy);
+	enemySpawn.iterEnemy++;
+	enemySpawn.numberEnemy++;
+}
+void SpawnCoin(list<Coin*> & coins, Coin & coin, const int value, Vector2f position)
 {
 	Coin *newCoin = new Coin;
 	*newCoin = coin;
@@ -40,8 +111,7 @@ void SpawnCoin(list<Coin*> & coins, Coin & coin, int value, Vector2f position)
 }
 void SpawnBonus(list<Bonus*> & bonuses, UsedBonuses & usedBonuses, Vector2f position)
 {
-	int chanceFall = rand() % 100;
-	if (chanceFall <= 30)
+	if (rand() % 100 <= CHANCE_DROP_BONUS)
 	{
 		Bonus *newBonus = new Bonus;
 		int chanceBonus = rand() % 4;
@@ -107,14 +177,29 @@ void SpawnEnemieExplosion(list<EnemyRemnants*> & enemieExplosions, EnemyRemnants
 	EnemyRemnants *newEnemyExplosion = new EnemyRemnants;
 	*newEnemyExplosion = enemyExplosion;
 	newEnemyExplosion->SetPosition(position);
+	newEnemyExplosion->SetRandomRotate();
 	enemieExplosions.push_back(newEnemyExplosion);
 }
 void SpawnMeteor(Meteor & meteor, list<Meteor*> & meteors)
 {
 	Meteor* newMeteor = new Meteor;
 	*newMeteor = meteor;
-	newMeteor->SetArrivalPosition(float(rand() % 2000), float(rand() % 2000));
+	newMeteor->SetArrivalPosition(float(rand() % (int)MAP_SIZE), float(rand() % (int)MAP_SIZE));
 	meteors.push_back(newMeteor);
+}
+void SpawnBullet(list<Bullet*> & bullets, Tower *tower, RenderWindow & window)
+{
+	Bullet *bullet = new Bullet;
+	*bullet = tower->GetBullet();
+	bullet->SetEnemyPos(tower->GetEnemyPos());
+	bullets.push_back(bullet);
+	FloatRect rect(window.getView().getCenter().x - window.getView().getSize().x / 2,
+		window.getView().getCenter().y - window.getView().getSize().y / 2,
+		window.getView().getSize().x, window.getView().getSize().y);
+	if (rect.contains(tower->GetPosition()))
+	{
+		bullet->GetSound().play();
+	}
 }
 
 void PlayerShot(Entities & entities, Vector2f mousePos)
@@ -124,7 +209,7 @@ void PlayerShot(Entities & entities, Vector2f mousePos)
 	bullet->SetStartPosition(entities.player.GetPosition());
 	bullet->SetEnemyPos(mousePos);                  //Позиция цели
 	entities.bullets.push_back(bullet);
-	bullet->GetSound()->play();
+	bullet->GetSound().play();
 	entities.player.canShot = false;
 }
 void CheckObstacles(Obstacles & obstacles, Player & player)
@@ -150,7 +235,7 @@ void CheckObstacles(Obstacles & obstacles, Player & player)
 		player.SetPosition(player.GetPosition() + VectorThrowing);
 	}
 }
-void CheckPlayerHp(Player & player, Vignette & vignette, UsedSounds & usedSounds, UsedMusics & usedMusics, state & gameState, RenderWindow & window)
+void CheckPlayerHp(Player & player, Vignette & vignette, UsedSounds & usedSounds, UsedMusics & usedMusics, RenderWindow & window)
 {
 	if (player.GetCurrentHp() < player.GetMaxHp() * 0.2f)
 	{
@@ -171,11 +256,11 @@ void CheckPlayerHp(Player & player, Vignette & vignette, UsedSounds & usedSounds
 			usedSounds.heartbeat.sound.stop();
 		}
 	}
-	if (player.GetCurrentHp() < 0) { gameState = state::lose; usedMusics.game.stop(); usedMusics.lose.play(); };
 }
 
-void TowerUpdateAndDraw(Entities & entities, UsedEntities & usedEntities, const bool drawActionArea, const float time, RenderWindow & window)
+void TowerUpdateAndDraw(Entities & entities, UsedEntities & usedEntities, const float time, RenderWindow & window)
 {
+	entities.towerInstalling.intersectAtPlacing = false;
 	for (auto it = entities.towers.begin(); it != entities.towers.end();)
 	{
 		Tower *tower = *it;
@@ -214,17 +299,7 @@ void TowerUpdateAndDraw(Entities & entities, UsedEntities & usedEntities, const 
 
 					if (tower->canShot)
 					{
-						Bullet *bullet = new Bullet;
-						*bullet = tower->GetBullet();
-						bullet->SetEnemyPos(tower->GetEnemyPos());
-						entities.bullets.push_back(bullet);
-						FloatRect rect(window.getView().getCenter().x - window.getView().getSize().x / 2,
-							window.getView().getCenter().y - window.getView().getSize().y / 2,
-							window.getView().getSize().x, window.getView().getSize().y);
-						if (rect.contains(tower->GetPosition()))
-						{
-							bullet->GetSound()->play();
-						}
+						SpawnBullet(entities.bullets, tower, window);
 						tower->canShot = false;
 					}
 				}
@@ -246,17 +321,11 @@ void TowerUpdateAndDraw(Entities & entities, UsedEntities & usedEntities, const 
 			if (entities.towerInstalling.towerInstallation)
 			{
 				//Не даём поставить новую башню на место установленной
-				if (tower->spriteMap.sprite.getGlobalBounds().intersects(entities.placingTower->spriteMap.sprite.getGlobalBounds()))
+				if (tower->boundsArea.getGlobalBounds().contains(entities.placingTower->GetPosition()))
 				{
 					entities.towerInstalling.intersectAtPlacing = true;
 				}
 				window.draw(tower->boundsArea);
-				window.draw(tower->actionArea);
-			}
-
-			//Отрисовка площади действия
-			if (drawActionArea)
-			{
 				window.draw(tower->actionArea);
 			}
 			tower->Draw(window);
@@ -276,7 +345,7 @@ void EnemiesUpdateAndDraw(Entities & entities, UsedEntities & usedEntities, Rend
 			SpawnCoin(entities.coins, usedEntities.coin, enemy->GetCoins(), itPosition);
 			SpawnBonus(entities.bonuses, usedEntities.bonuses, itPosition);
 			SpawnEnemieExplosion(entities.enemyExplosions, usedEntities.enemyExplosion, itPosition);
-			if (rand()%100 <= 80)
+			if (rand()%100 <= CHANCE_SPAWN_TOXIC_CLOUD)
 			{
 				SpawnToxicCloud(entities.toxicClouds, usedEntities.toxicCloud, itPosition);
 			}
@@ -478,39 +547,36 @@ void MeteorsUpdateAndDraw(Entities & entities, UsedEntities & usedEntities, Rend
 	{
 		Meteor *meteor = *itMeteor;
 		meteor->Update(time);
+		meteor->Draw(window);
 		if (meteor->GetArrival())
 		{
 			SpawnExplosion(entities.explosions, usedEntities.explosion, usedEntities.cameraShake, meteor->GetArrivalPosition(), window);
-			for (auto it = entities.enemies.begin(); it != entities.enemies.end();)
+			for (auto itEnemy = entities.enemies.begin(); itEnemy != entities.enemies.end();)
 			{
-				Enemy *enemy = *it;
-				if (meteor->GetArrivalArea().intersects(enemy->damageArea.getGlobalBounds()))
+				Enemy *enemy = *itEnemy;
+				if (meteor->GetArrivalArea().contains(enemy->GetPosition()))
 				{
 					enemy->TakeDamage(meteor->GetDamage());
 				}
-				it++;
+				++itEnemy;
 			}
-			for (auto it = entities.towers.begin(); it != entities.towers.end();)
+			for (auto itTower = entities.towers.begin(); itTower != entities.towers.end();)
 			{
-				Tower *tower = *it;
-				if (meteor->GetArrivalArea().intersects(tower->boundsArea.getGlobalBounds()))
+				Tower *tower = *itTower;
+				if (meteor->GetArrivalArea().contains(tower->GetPosition()))
 				{
 					tower->TakeDamage(meteor->GetDamage());
 				}
-				it++;
+				++itTower;
 			}
-			if (meteor->GetArrivalArea().intersects(entities.player.GetGlobalBounds()))
+			if (meteor->GetArrivalArea().contains(entities.player.GetPosition()))
 			{
 				entities.player.TakeDamage(meteor->GetDamage());
 			}
 			itMeteor = entities.meteors.erase(itMeteor);
 			delete(meteor);
 		}
-		else
-		{
-			meteor->Draw(window);
-			itMeteor++;
-		}
+		else ++itMeteor;
 	}
 }
 void ExplosionsUpdateAndDraw(list<Explosion*> & explosions, RenderWindow & window, const float time)
@@ -533,6 +599,7 @@ void ExplosionsUpdateAndDraw(list<Explosion*> & explosions, RenderWindow & windo
 }
 void ToxicCloudUpdateAndDraw(Entities & entities, RenderWindow & window, const float time)
 {
+	float damage = 0;
 	for (auto it = entities.toxicClouds.begin(); it != entities.toxicClouds.end();)
 	{
 		ToxicCloud *toxicCloud = *it;
@@ -546,7 +613,11 @@ void ToxicCloudUpdateAndDraw(Entities & entities, RenderWindow & window, const f
 		{
 			if (toxicCloud->GetGlobalBounds().contains(entities.player.GetPosition()))
 			{
-				entities.player.TakeDamage(toxicCloud->GetDamage() * time/1000.0f);
+				if (damage == 0)
+				{
+					damage = toxicCloud->GetDamage() * time / 1000.0f;
+					entities.player.TakeDamage(damage);
+				}
 			}
 			toxicCloud->Draw(window);
 			++it;
@@ -584,22 +655,44 @@ void CursorUpdateAndDraw(UsedCursors & cursors, TowerInstalling & towerInstallin
 		window.draw(cursors.aimCursor);
 	}
 }
-
-void UpdateAndDraw(Entities & entities, UsedEntities & usedEntities, UsedSounds & usedSounds, const bool drawActionArea, RenderWindow & window, const float time)
+void PlayerMoneyTextDraw(Player & player, Text & playerMoneyText, View & view, RenderWindow & window)
 {
-	EnemyExplosionUpdateAndDraw(entities.enemyExplosions, window, time);
-	PortalUpdateAndDraw(entities, window, time);
-	MeteorsUpdateAndDraw(entities, usedEntities, window, time);
-	ToxicCloudUpdateAndDraw(entities, window, time);
-	BonusesUpdateAndDraw(entities, usedSounds, window, time);
-	TowerUpdateAndDraw(entities, usedEntities, drawActionArea, time, window);
-	BulletUpdateAndDraw(entities, usedEntities, window, time);
-	EnemiesUpdateAndDraw(entities, usedEntities, window, time);
-	ExplosionsUpdateAndDraw(entities.explosions, window, time);
-	ChangeHpViewsUpdateAndDraw(entities, window, time);
+	ostringstream playerMoneyString;
+	playerMoneyString << player.GetMoney();
+	playerMoneyText.setString("Money: " + playerMoneyString.str());
+	playerMoneyText.setPosition(view.getCenter() + Vector2f(-540, 260));
+	window.draw(playerMoneyText);
 }
 
-void EventUpdate(Event & event, RenderWindow & window, state & gameState, Entities & entities, UsedEntities & usedEntities, bool & drawActionArea)
+void UpdateAndDraw(Entities & entities, UsedEntities & usedEntities, UsedSounds & usedSounds, UsedTexts & usedTexts, View & view, RenderWindow & window, const float time)
+{
+	window.draw(usedEntities.mapSprite);
+	EnemyExplosionUpdateAndDraw(entities.enemyExplosions, window, time);
+	PortalUpdateAndDraw(entities, window, time);
+	ToxicCloudUpdateAndDraw(entities, window, time);
+	BonusesUpdateAndDraw(entities, usedSounds, window, time);
+	TowerUpdateAndDraw(entities, usedEntities, time, window);
+	BulletUpdateAndDraw(entities, usedEntities, window, time);
+	EnemiesUpdateAndDraw(entities, usedEntities, window, time);
+	CoinsUpdateAndDraw(entities.coins, window, time);
+	PlayerUpdateAndDraw(entities.player, window, time);
+	ExplosionsUpdateAndDraw(entities.explosions, window, time);
+	MeteorsUpdateAndDraw(entities, usedEntities, window, time);
+	ChangeHpViewsUpdateAndDraw(entities, window, time);
+	TowerInstall(entities, usedSounds, GetMousePosition(window), window);
+	if (Mouse::isButtonPressed(Mouse::Left) && !entities.towerInstalling.towerInstallation && entities.player.canShot)
+	{
+		PlayerShot(entities, GetMousePosition(window));
+	}
+	CheckObstacles(entities.obstacles, entities.player);
+	PlayerTracking(entities.player, usedEntities.cameraShake, MAP_SIZE, view, time);
+	window.setView(view);
+	CursorUpdateAndDraw(usedEntities.cursors, entities.towerInstalling, GetMousePosition(window), window);
+	IconsUpdateAndDraw(usedEntities, entities, usedTexts, view, window);
+	PlayerMoneyTextDraw(entities.player, usedTexts.playerMoneyText, view, window);
+}
+
+void EventUpdate(Event & event, RenderWindow & window, state & gameState, Entities & entities, UsedEntities & usedEntities)
 {
 	while (window.pollEvent(event))
 	{
@@ -632,75 +725,94 @@ void EventUpdate(Event & event, RenderWindow & window, state & gameState, Entiti
 					}
 
 				}
-				if (event.key.code == Keyboard::R)
-				{
-					if (drawActionArea == false) drawActionArea = true;
-					else drawActionArea = false;
-				}
 				if (event.key.code == Keyboard::Escape) window.close();
 			}
 		}
 	}
 }
 
-void TowerInstall(Entities & entities, UsedSounds & usedSounds, const Vector2f mousePos, RenderWindow & window)
+void Spawner(Entities & entities, UsedEntities & usedEntities, UsedSounds & usedSounds, const float time)
 {
-	if (entities.towerInstalling.towerInstallation)
+	usedEntities.enemySpawner.timerToSpawn.current -= time;
+	if (usedEntities.enemySpawner.timerToSpawn.current <= 0)
 	{
-		entities.placingTower->SetPosition(mousePos);
-		if (entities.towerInstalling.placingArea.getGlobalBounds().contains(mousePos) && !entities.towerInstalling.notPlacingArea.getGlobalBounds().contains(mousePos) && !entities.towerInstalling.intersectAtPlacing)
+		auto iterMap = usedEntities.enemySpawner.timeEnemySpawnOfNumberEnemy.find(usedEntities.enemySpawner.numberEnemy);
+		if (iterMap != usedEntities.enemySpawner.timeEnemySpawnOfNumberEnemy.end())
 		{
-			entities.placingTower->spriteMap.sprite.setColor(Color::Green);
-			window.draw(entities.placingTower->actionArea);
-			if (Mouse::isButtonPressed(Mouse::Left))
-			{
-				entities.towerInstalling.towerInstallation = false;
-				entities.placingTower->isActive = true;
-				entities.placingTower->spriteMap.sprite.setColor(Color::White);
-				entities.towers.push_back(entities.placingTower);
-				entities.player.SubCoins(entities.placingTower->GetPrice());
-				entities.player.canShot = false;
-				usedSounds.placeTower.sound.play();
-			}
+			usedEntities.enemySpawner.timerToSpawn.initial = iterMap->second;
 		}
-		else
+		usedEntities.enemySpawner.timerToSpawn.current = usedEntities.enemySpawner.timerToSpawn.initial;
+
+		if (usedEntities.enemySpawner.iterEnemy != usedEntities.enemySpawner.enemiesInLevel.end())
 		{
-			entities.placingTower->spriteMap.sprite.setColor(Color::Red);
+			SpawnEnemy(usedEntities.enemySpawner, entities.enemies);
 		}
-		entities.placingTower->Update();
-		entities.towerInstalling.placingArea.setPosition(entities.player.GetPosition());
-		entities.towerInstalling.notPlacingArea.setPosition(entities.player.GetPosition());
-		window.draw(entities.towerInstalling.placingArea);
-		window.draw(entities.towerInstalling.notPlacingArea);
-		window.draw(entities.placingTower->spriteMap.sprite);
+	}
+
+	usedEntities.timersSpawns.meteorSpawnTimer.current -= time;
+	if (usedEntities.timersSpawns.meteorSpawnTimer.current <= 0)
+	{
+		SpawnMeteor(usedEntities.meteor, entities.meteors);
+		usedEntities.timersSpawns.meteorSpawnTimer.current = usedEntities.timersSpawns.meteorSpawnTimer.initial;
+	}
+
+	usedEntities.timersSpawns.evilLaughTimer.current -= time;
+	if (usedEntities.timersSpawns.evilLaughTimer.current <= 0)
+	{
+		if (rand() % 100 == CHANCE_LAUGH_IN_SECONDS)
+		{
+			usedSounds.evilLaugh.sound.play();
+		}
+		usedEntities.timersSpawns.evilLaughTimer.current = usedEntities.timersSpawns.evilLaughTimer.initial;
 	}
 }
 
-void PlayerTracking(Player & player, CameraShake & cameraShake, const Vector2f & mapSize, View & view, const float time)
+state CheckGameState(EnemySpawner & enemySpawn, Entities & entities)
 {
-	if (player.GetPosition().x < view.getSize().x / 2 || player.GetPosition().x > mapSize.x - view.getSize().x / 2 ||
-		player.GetPosition().y < view.getSize().y / 2 || player.GetPosition().y > mapSize.y - view.getSize().y / 2)
+	if (enemySpawn.iterEnemy == enemySpawn.enemiesInLevel.end() && entities.enemies.size() == 0)
 	{
-		float tempX = player.GetPosition().x;
-		float tempY = player.GetPosition().y;
-		if (player.GetPosition().x < view.getSize().x / 2)
-			tempX = view.getSize().x / 2;
-		if (player.GetPosition().x > mapSize.x - view.getSize().x / 2)
-			tempX = mapSize.x - view.getSize().x / 2;
-		if (player.GetPosition().y < view.getSize().y / 2)
-			tempY = view.getSize().y / 2;
-		if (player.GetPosition().y > mapSize.y - view.getSize().y / 2)
-			tempY = mapSize.y - view.getSize().y / 2;
+		return state::win;
+	}
+	if (entities.player.GetCurrentHp() < 0) 
+	{ 
+		return state::lose; 
+	}
+	return state::game;
+}
 
-		if (cameraShake.GetShake())
-			cameraShake.Update(view, Vector2f(tempX, tempY), time);
-		else view.setCenter(tempX, tempY);
-	}
-	else
-	{
-		if (cameraShake.GetShake()) cameraShake.Update(view, player.GetPosition(), time);
-		else view.setCenter(player.GetPosition());
-	}
+void InitGameEntities(UsedEntities & usedEntities, UsedSounds & usedSounds, UsedMusics & usedMusics, UsedTexts & usedTexts, Entities & entities, 
+						Textures & textures)
+{
+	InitMeteorSpawnTimer(usedEntities.timersSpawns.meteorSpawnTimer);
+	InitEvilLaughTimer(usedEntities.timersSpawns.evilLaughTimer);
+	InitMusics(usedMusics);
+	InitSounds(usedSounds);
+	InitEntity(usedEntities, entities, textures, usedSounds, usedTexts);
+	InitEnemySpawn(usedEntities);
+	InitTextMoney(usedTexts);
+	entities.placingTower = new Tower;
+}
+
+
+void PlayGame(Entities & entities, UsedEntities & usedEntities, UsedTexts & usedTexts, UsedSounds & usedSounds, UsedMusics & usedMusics, state & gameState,
+				View & view, RenderWindow & window, Clock & clock)
+{
+	float time = (float)clock.getElapsedTime().asMicroseconds();
+	clock.restart();
+	time /= 1000;
+
+	Event event;
+	EventUpdate(event, window, gameState, entities, usedEntities);
+
+	Spawner(entities, usedEntities, usedSounds, time);
+
+	window.clear(Color::White);
+
+	UpdateAndDraw(entities, usedEntities, usedSounds, usedTexts, view, window, time);
+	CheckPlayerHp(entities.player, usedEntities.vignette, usedSounds, usedMusics, window);
+
+	window.display();
+	gameState = CheckGameState(usedEntities.enemySpawner, entities);
 }
 
 int main()
@@ -708,6 +820,7 @@ int main()
 	RenderWindow window(VideoMode(SCREEN_WIDTH, SCREEN_HEIGHT), "Hell Gate", Style::Default);
 	View view;
 	view.reset(FloatRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT));
+	window.setKeyRepeatEnabled(false);
 
 	Textures textures;
 	UsedSounds usedSounds;
@@ -716,152 +829,40 @@ int main()
 	UsedEntities usedEntities;
 
 	Entities entities;
-
-	vector<Enemy*> enemiesInLevel;
-
-	Font font;
-	Text playerMoneyText;
-	InitTextMoney(playerMoneyText, font);
 	
-	if (!LoadTextures(textures) || !LoadSounds(usedSounds))
+	if (!LoadTextures(textures) || !LoadSounds(usedSounds) || !LoadFont(usedTexts.font))
 	{
+		cout << "Not loaded resources" << endl;
 		return EXIT_FAILURE;
 	}
+	InitGameEntities(usedEntities, usedSounds, usedMusics, usedTexts, entities, textures);
 
-	InitMusics(usedMusics);
-	InitSounds(usedSounds);
-	InitEntity(usedEntities, entities, textures, usedSounds, usedTexts, font);
-	InitMapUsedEnemies(enemiesInLevel, usedEntities);
-
-	Vector2f mapSize(usedEntities.mapSprite.getGlobalBounds().width, usedEntities.mapSprite.getGlobalBounds().height);
-
-	vector<Enemy*>::iterator iterEnemy = enemiesInLevel.begin();
-	entities.placingTower = new Tower;
-	bool drawActionArea = false;
-
-	float timerEnemySpawn = 4000;
-	float timerMeteorSpawn = 1000;
-	float timerEvilLaugh = 1000;
-	int numberEnemy = 0;
-
-	window.setKeyRepeatEnabled(false);
-	//window.setFramerateLimit(150);
 	Clock clock;
-	FPS fps;
-
 	state gameState = state::menu;
 
 	while (window.isOpen())
 	{
-		float time = (float)clock.getElapsedTime().asMicroseconds();
-		clock.restart();
-		time /= 1000;
-		fps.printFPS(time);
-
-		Event event;
-		EventUpdate(event, window, gameState, entities, usedEntities, drawActionArea);
-
-		Vector2i pixelPos = Mouse::getPosition(window);
-		Vector2f mousePos = window.mapPixelToCoords(pixelPos);
-
-		entities.player.isMove = false;
-		
 		if (gameState == state::game)
 		{
-			if (usedMusics.game.getStatus() == SoundStream::Stopped) 
-			{
-				usedMusics.game.play();
-			}
-
-			timerEnemySpawn -= time;
-
-			if (timerEnemySpawn <= 0)
-			{
-				if (numberEnemy >= 0 && numberEnemy < 5) timerEnemySpawn = 4000;
-				else if (numberEnemy >= 5 && numberEnemy < 10) timerEnemySpawn = 3000;
-				else if (numberEnemy >= 10 && numberEnemy < 15) timerEnemySpawn = 2000;
-				else if (numberEnemy >= 15 && numberEnemy < 30) timerEnemySpawn = 1500;
-				else if (numberEnemy >= 30) timerEnemySpawn = 500;
-
-				if (iterEnemy != enemiesInLevel.end())
-				{
-					SpawnEnemy(enemiesInLevel, iterEnemy, entities.enemies, numberEnemy);
-				}
-				else
-				{
-					if (entities.enemies.size() == 0)
-					{
-						gameState = state::win;
-						usedMusics.game.stop();
-					}
-				}
-			}
-			entities.towerInstalling.intersectAtPlacing = false;
-
-			timerMeteorSpawn -= time;
-			if (timerMeteorSpawn <= 0)
-			{
-				SpawnMeteor(usedEntities.meteor, entities.meteors);
-				timerMeteorSpawn = 1000;
-			}
-
-			timerEvilLaugh -= time;
-			if (timerEvilLaugh <= 0)
-			{
-				if (rand() % 100 == 1)
-				{
-					usedSounds.evilLaugh.sound.play();
-				}
-				timerEvilLaugh = 1000;
-			}
-			
-			window.clear(Color::White);
-
-			window.draw(usedEntities.mapSprite);
-			UpdateAndDraw(entities, usedEntities, usedSounds, drawActionArea, window, time);
-
-			if (Mouse::isButtonPressed(Mouse::Left) && !entities.towerInstalling.towerInstallation && entities.player.canShot)
-			{
-				PlayerShot(entities, mousePos);
-			}
-
-			TowerInstall(entities, usedSounds, mousePos, window);
-			CheckObstacles(entities.obstacles, entities.player);
-			PlayerUpdateAndDraw(entities.player, window, time);
-			CoinsUpdateAndDraw(entities.coins, window, time);
-
-			PlayerTracking(entities.player, usedEntities.cameraShake, mapSize, view, time);
-			window.setView(view);
-
-			CursorUpdateAndDraw(usedEntities.cursors, entities.towerInstalling, mousePos, window);
-			IconsUpdateAndDraw(usedEntities, entities, usedTexts, view, window);
-
-			ostringstream playerMoneyString;
-			playerMoneyString << entities.player.GetMoney();
-			playerMoneyText.setString("Money: " + playerMoneyString.str());
-			playerMoneyText.setPosition(view.getCenter() + Vector2f(-540, 260));
-
-			CheckPlayerHp(entities.player, usedEntities.vignette, usedSounds, usedMusics, gameState, window);
-			window.draw(playerMoneyText);
+			PlayGame(entities, usedEntities, usedTexts, usedSounds, usedMusics, gameState, view, window, clock);
 		}
 		if (gameState == state::win)
 		{
 			usedSounds.heartbeat.sound.stop();
+			usedMusics.game.stop();
 			Win(usedMusics.win, view, window);
 		}
 		if (gameState == state::lose)
 		{
+			usedMusics.game.stop();
 			usedSounds.heartbeat.sound.stop();
 			Lose(usedMusics.lose, view, window);
 		}
 		if (gameState == state::menu)
 		{
-			Menu(usedMusics.menu, gameState, view, window);
+			Menu(usedMusics, gameState, view, window);
 			clock.restart();
 		}
-
-		window.display();
 	}
-
 	return 0;
 }

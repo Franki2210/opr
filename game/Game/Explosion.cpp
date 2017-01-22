@@ -5,10 +5,11 @@
 Explosion::Explosion() = default;
 Explosion::~Explosion() = default;
 
-void Explosion::SetExplosion(Texture & texture, const int columnsInMap, const int linesInMap, const float speedAnimation_)
+void Explosion::SetExplosion(sf::Texture & texture, const int columnsInMap, const int linesInMap, const float speedAnimation)
 {
 	spriteMap.SetSpriteMap(texture, columnsInMap, linesInMap);
-	speedAnimation = speedAnimation_;
+	spriteMap.sprite.setOrigin(spriteMap.sprite.getGlobalBounds().width / 2, spriteMap.sprite.getGlobalBounds().height * 0.7f);
+	this->speedAnimation = speedAnimation;
 }
 
 void Explosion::SetScale(const float x, const float y)
@@ -16,17 +17,16 @@ void Explosion::SetScale(const float x, const float y)
 	spriteMap.sprite.setScale(x, y);
 }
 
-void Explosion::SetSound(Sound *sound_)
+void Explosion::SetSound(sf::Sound *sound)
 {
-	sound = sound_;
-
+	this->sound = sound;
 }
-Sound *Explosion::GetSound()
+sf::Sound *Explosion::GetSound()
 {
 	return sound;
 }
 
-void Explosion::SetPosition(const Vector2f position)
+void Explosion::SetPosition(const sf::Vector2f position)
 {
 	spriteMap.sprite.setPosition(position);
 }
@@ -46,7 +46,7 @@ void Explosion::Update(const float time)
 	}
 }
 
-void Explosion::Draw(RenderWindow & window)
+void Explosion::Draw(sf::RenderWindow & window)
 {
 	window.draw(spriteMap.sprite);
 }

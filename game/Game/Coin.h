@@ -7,27 +7,27 @@ public:
 	bool destroy = false;
 
 	Coin();
-	Coin(Texture & texture, const int numColumns, const int numLines);
+	Coin(sf::Texture & texture, const int numColumns, const int numLines);
 	~Coin();
 
-	void SetSpriteMap(Texture & texture, const int numColumns, const int numLines);
+	void SetSpriteMap(sf::Texture & texture, const int numColumns, const int numLines);
 
-	void SetValue(const int value_);
+	void SetValue(const int valueCoin);
 
-	void SetFont(const Font font_);
+	void SetFont(const sf::Font fontCoin);
 
-	void SetPosition(const Vector2f pos);
+	void SetPosition(const sf::Vector2f pos);
 
 	void Update(const float time);
 
-	void Draw(RenderWindow & window);
+	void Draw(sf::RenderWindow & window);
 
 private:
 	float timerToDestroy = 2000;
 	float currFrame = 0;
-	Vector2f position;
+	sf::Vector2f position;
 	float currAlpha = 255;
 	int value = 0;
-	Font font;
-	Text text;
+	sf::Font font;
+	sf::Text text;
 };

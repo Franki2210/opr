@@ -6,15 +6,15 @@ public:
 	ToxicCloud();
 	~ToxicCloud();
 
-	void SetToxicCloud(Texture & texture, int columnsInMap, int linesInMap);
+	void SetToxicCloud(sf::Texture & texture, int columnsInMap, int linesInMap);
 
-	void SetPosition(Vector2f pos);
+	void SetPosition(sf::Vector2f pos);
 	void SetPosition(float x, float y);
-	Vector2f GetPosition();
+	sf::Vector2f GetPosition();
 
 	void SetSpeedAnimation(float value);
 
-	FloatRect GetGlobalBounds();
+	sf::FloatRect GetGlobalBounds();
 
 	void SetTimeToDestroy(float value);
 
@@ -28,10 +28,10 @@ public:
 
 	void Update(const float time);
 
-	void Draw(RenderWindow & window);
+	void Draw(sf::RenderWindow & window);
 
 private:
-	Vector2f position;
+	sf::Vector2f position;
 	float timeToDestroy = 10000;
 	float timerToDestroy = timeToDestroy;
 	bool isDestroy = false;
