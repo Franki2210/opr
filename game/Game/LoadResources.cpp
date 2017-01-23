@@ -72,18 +72,25 @@ bool LoadEnemyExplosionTexture(sf::Texture & enemyExplosion)
 {
 	return enemyExplosion.loadFromFile(PATH_TO_TEXTURES + "enemies/enemy_explosion.png");
 }
+bool LoadMenuTextures(Textures & textures)
+{
+	return textures.menu.menuBG.loadFromFile(PATH_TO_TEXTURES + "bg.jpg") &&
+			textures.menu.loseBG.loadFromFile(PATH_TO_TEXTURES + "lose.png") &&
+			textures.menu.winBG.loadFromFile(PATH_TO_TEXTURES + "win.png") &&
+			textures.menu.buttonNewGame.loadFromFile(PATH_TO_TEXTURES + "new_game.png") &&
+			textures.menu.buttonExit.loadFromFile(PATH_TO_TEXTURES + "exit.png");
+}
 
 bool LoadTextures(Textures & textures)
 {
-	return LoadTowerTextures(textures.tower1, textures.tower2, textures.tower3) &&
+	return LoadMenuTextures(textures) &&
+		LoadTowerTextures(textures.tower1, textures.tower2, textures.tower3) &&
 		LoadEnemiesTextures(textures.enemy1, textures.enemy2, textures.enemy3) &&
 		LoadPlayerTextures(textures.player) && 
 		LoadPortalTexture(textures.portal) &&
-		LoadPortalTexture(textures.portal) && 
 		LoadCoinTexture(textures.coin) &&
 		LoadMapTexture(textures.map) && 
 		LoadBonusesTextures(textures.bonuses) &&
-		LoadBonusesTextures(textures.bonuses) && 
 		LoadBulletsTexture(textures.bullets) &&
 		LoadMeteorTextures(textures.meteor) && 
 		LoadExplosionTexture(textures.explosion) &&

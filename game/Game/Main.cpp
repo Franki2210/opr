@@ -198,7 +198,7 @@ void SpawnBullet(list<Bullet*> & bullets, Tower *tower, RenderWindow & window)
 		window.getView().getSize().x, window.getView().getSize().y);
 	if (rect.contains(tower->GetPosition()))
 	{
-		bullet->GetSound().play();
+		bullet->GetSound()->play();
 	}
 }
 
@@ -209,7 +209,7 @@ void PlayerShot(Entities & entities, Vector2f mousePos)
 	bullet->SetStartPosition(entities.player.GetPosition());
 	bullet->SetEnemyPos(mousePos);                  //Позиция цели
 	entities.bullets.push_back(bullet);
-	bullet->GetSound().play();
+	bullet->GetSound()->play();
 	entities.player.canShot = false;
 }
 void CheckObstacles(Obstacles & obstacles, Player & player)
@@ -846,21 +846,14 @@ int main()
 		{
 			PlayGame(entities, usedEntities, usedTexts, usedSounds, usedMusics, gameState, view, window, clock);
 		}
-		if (gameState == state::win)
+		if (gameState == state::win || gameState == state::lose)
 		{
 			usedSounds.heartbeat.sound.stop();
-			usedMusics.game.stop();
-			Win(usedMusics.win, view, window);
-		}
-		if (gameState == state::lose)
-		{
-			usedMusics.game.stop();
-			usedSounds.heartbeat.sound.stop();
-			Lose(usedMusics.lose, view, window);
+			EndGame(textures, usedMusics, gameState, view, window);
 		}
 		if (gameState == state::menu)
 		{
-			Menu(usedMusics, gameState, view, window);
+			Menu(textures, usedMusics, gameState, view, window);
 			clock.restart();
 		}
 	}

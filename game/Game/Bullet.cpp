@@ -24,7 +24,7 @@ void Bullet::SetSpeed(const float speed)
 	this->speed = speed;
 }
 
-void Bullet::SetSounds(Sound & sound1, Sound & sound2, Sound & sound3)
+void Bullet::SetSounds(Sound * sound1, Sound * sound2, Sound * sound3)
 {
 	soundsBullet.sound1 = sound1;
 	soundsBullet.sound2 = sound2;
@@ -32,15 +32,15 @@ void Bullet::SetSounds(Sound & sound1, Sound & sound2, Sound & sound3)
 }
 void Bullet::SetVolumeSounds(const float volume)
 {
-	soundsBullet.sound1.setVolume(volume);
-	soundsBullet.sound2.setVolume(volume);
-	soundsBullet.sound3.setVolume(volume);
+	soundsBullet.sound1->setVolume(volume);
+	soundsBullet.sound2->setVolume(volume);
+	soundsBullet.sound3->setVolume(volume);
 }
 float Bullet::GetVolumeSounds()
 {
-	return soundsBullet.sound1.getVolume();
+	return soundsBullet.sound1->getVolume();
 }
-Sound &Bullet::GetSound()
+Sound *Bullet::GetSound()
 {
 	int randSound = rand() % 3;
 	switch (randSound)

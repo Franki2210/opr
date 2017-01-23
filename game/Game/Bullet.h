@@ -2,9 +2,9 @@
 #include "Header.h"
 struct SoundsBullet
 {
-	sf::Sound sound1;
-	sf::Sound sound2;
-	sf::Sound sound3;
+	sf::Sound *sound1;
+	sf::Sound *sound2;
+	sf::Sound *sound3;
 };
 
 class Bullet
@@ -20,10 +20,10 @@ public:
 
 	void SetSpeed(const float speed);
 
-	void SetSounds(sf::Sound & sound1, sf::Sound & sound2, sf::Sound & sound3);
+	void SetSounds(sf::Sound * sound1, sf::Sound * sound2, sf::Sound * sound3);
 	void SetVolumeSounds(const float volume);
 	float GetVolumeSounds();
-	sf::Sound &GetSound();
+	sf::Sound *GetSound();
 
 	bool GetIsDestroy();
 	void SetIsDestroy(const bool value);

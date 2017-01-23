@@ -66,6 +66,14 @@ struct TexturesMeteor
 	sf::Texture shadow;
 	sf::Texture pointArrival;
 };
+struct TexturesMenu
+{
+	sf::Texture menuBG;
+	sf::Texture loseBG;
+	sf::Texture winBG;
+	sf::Texture buttonNewGame;
+	sf::Texture buttonExit;
+};
 
 struct Textures
 {
@@ -76,6 +84,7 @@ struct Textures
 	TextureBonuses bonuses;
 	TexturesBullets bullets;
 	TexturesMeteor meteor;
+	TexturesMenu menu;
 	sf::Texture tower1;
 	sf::Texture tower2;
 	sf::Texture tower3;

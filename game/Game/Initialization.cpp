@@ -182,19 +182,19 @@ void InitBullets(UsedBullets & bullets, Textures & textures, UsedSounds & sounds
 
 	bullets.gunShot.SetDamage(5.0f);
 	bullets.gunShot.SetSpeed(0.5f);
-	bullets.gunShot.SetSounds(sounds.gunShots.shot1, sounds.gunShots.shot2, sounds.gunShots.shot3);
+	bullets.gunShot.SetSounds(&sounds.gunShots.shot1, &sounds.gunShots.shot2, &sounds.gunShots.shot3);
 
 	bullets.twinGunShot.SetDamage(10.0f);
 	bullets.twinGunShot.SetSpeed(0.5f);
-	bullets.twinGunShot.SetSounds(sounds.gunShots.shot1, sounds.gunShots.shot2, sounds.gunShots.shot3);
+	bullets.twinGunShot.SetSounds(&sounds.gunShots.shot1, &sounds.gunShots.shot2, &sounds.gunShots.shot3);
 
 	bullets.laserShot.SetDamage(70.0f);
 	bullets.laserShot.SetSpeed(3.0f);
-	bullets.laserShot.SetSounds(sounds.laserShots.shot1, sounds.laserShots.shot2, sounds.laserShots.shot3);
+	bullets.laserShot.SetSounds(&sounds.laserShots.shot1, &sounds.laserShots.shot2, &sounds.laserShots.shot3);
 
 	bullets.playerGunShot.SetDamage(5.0f);
 	bullets.playerGunShot.SetSpeed(1.0f);
-	bullets.playerGunShot.SetSounds(sounds.playerGunShots.shot1, sounds.playerGunShots.shot2, sounds.playerGunShots.shot3);
+	bullets.playerGunShot.SetSounds(&sounds.playerGunShots.shot1, &sounds.playerGunShots.shot2, &sounds.playerGunShots.shot3);
 }
 void InitMeteor(Meteor & meteor, Textures & textures)
 {
